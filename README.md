@@ -45,6 +45,31 @@ sudo bash src/enable-no-password.sh      # undo: sudo rm /etc/sudoers.d/battery-
 
 Everything else in the app works without it.
 
+## Building a signed, notarized release
+
+`src/build.sh` makes an **unsigned** local build (fine for yourself, but Gatekeeper warns
+on first launch). To produce a notarized `.dmg` that opens with no warning, you need an
+Apple Developer Program membership and a *Developer ID Application* certificate, then:
+
+```bash
+# one-time: save notarization credentials
+xcrun notarytool store-credentials BatteryHog-notary \
+  --apple-id "you@example.com" --team-id "TEAMID" --password "app-specific-password"
+
+# build → sign (hardened runtime) → notarize → staple → package
+SIGN_ID="Developer ID Application: Your Name (TEAMID)" bash src/release.sh
+```
+
+This outputs `dist/BatteryHog-<version>.dmg`, stapled and ready to share. Attach it to a
+GitHub Release:
+
+```bash
+gh release create v1.0 dist/BatteryHog-1.0.dmg --title "Battery Hog 1.0"
+```
+
+> The app uses no third-party libraries, so it needs no special hardened-runtime
+> entitlements — `src/release.sh` signs it with `--options runtime` and nothing else.
+
 ## How it works
 
 The backend reads only built-in macOS tools and exposes them on `127.0.0.1`:

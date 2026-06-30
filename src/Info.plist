@@ -7,7 +7,7 @@
     <key>CFBundleDisplayName</key>
     <string>Battery Hog</string>
     <key>CFBundleIdentifier</key>
-    <string>com.local.batteryhog</string>
+    <string>com.lukefairbanks.batteryhog</string>
     <key>CFBundleVersion</key>
     <string>1.0</string>
     <key>CFBundleShortVersionString</key>

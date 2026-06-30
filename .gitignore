@@ -12,3 +12,6 @@ src/AppIcon.iconset/
 # python
 __pycache__/
 *.pyc
+
+# signed release output
+dist/
