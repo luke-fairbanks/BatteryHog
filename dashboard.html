@@ -1,0 +1,1597 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Battery Hog</title>
+<style>
+  :root{
+    --accent:#0a84ff; --accent-press:#0060df;
+    --accent-text:#0066cc;
+    --accent-soft:rgba(10,132,255,.14);
+    --green:#30d158; --amber:#ff9f0a; --red:#ff453a; --teal:#40c8e0;
+    --red-text:#d70015;
+    --content-bg:#f5f5f7;
+    --card:#ffffff;
+    --card-2:#fbfbfd;
+    --line:rgba(0,0,0,.08);
+    --line-strong:rgba(0,0,0,.13);
+    --txt:#1d1d1f;
+    --txt-2:rgba(60,60,67,.78);
+    --txt-label:#5c5c61;
+    --txt-3:rgba(60,60,67,.4);
+    --seg-inactive:#48484c;
+    --sel:rgba(0,0,0,.085);
+    --sel-active:var(--accent);
+    --track:rgba(120,120,128,.18);
+    --hover:rgba(0,0,0,.045);
+    --chart-surface:rgba(0,0,0,.025);
+    --shadow:0 1px 1px rgba(0,0,0,.04),0 4px 10px rgba(0,0,0,.05),0 16px 34px rgba(0,0,0,.08);
+    --shadow-hover:0 2px 4px rgba(0,0,0,.06),0 10px 22px rgba(0,0,0,.09),0 28px 52px rgba(0,0,0,.12);
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --accent:#0a84ff; --accent-press:#409cff;
+      --accent-text:#4ca0ff;
+      --accent-soft:rgba(10,132,255,.22);
+      --red-text:#ff6961;
+      --content-bg:#1c1c1e;
+      --card:#2c2c2e;
+      --card-2:#262628;
+      --line:rgba(255,255,255,.09);
+      --line-strong:rgba(255,255,255,.14);
+      --txt:#f5f5f7;
+      --txt-2:rgba(235,235,245,.6);
+      --txt-label:rgba(235,235,245,.6);
+      --txt-3:rgba(235,235,245,.35);
+      --seg-inactive:rgba(235,235,245,.6);
+      --sel:rgba(255,255,255,.1);
+      --sel-active:var(--accent);
+      --track:rgba(120,120,128,.32);
+      --hover:rgba(255,255,255,.06);
+      --chart-surface:rgba(0,0,0,.22);
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px rgba(0,0,0,.5);
+      --shadow-hover:0 2px 6px rgba(0,0,0,.55),0 22px 48px rgba(0,0,0,.65);
+    }
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none}
+  html,body{height:100%}
+  body{
+    font-family:var(--sans);
+    color:var(--txt);
+    background:transparent;
+    -webkit-font-smoothing:antialiased;
+    -webkit-user-select:none;
+    user-select:none;
+    cursor:default;
+    overflow:hidden;
+    font-size:13px;
+  }
+  .shell{display:flex;height:100vh;width:100vw}
+
+  /* ---------- SIDEBAR (transparent for vibrancy) ---------- */
+  .sidebar{
+    width:216px;flex-shrink:0;
+    background:transparent;
+    display:flex;flex-direction:column;
+    -webkit-app-region:drag;
+    padding:0 12px 12px;
+  }
+  .drag-strip{height:58px;flex-shrink:0;-webkit-app-region:drag}
+  .brand{
+    display:flex;align-items:center;gap:9px;
+    padding:2px 8px 14px;
+  }
+  .brand .logo{
+    width:26px;height:26px;border-radius:7px;
+    background:linear-gradient(160deg,var(--accent),#5e5ce6);
+    display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;
+  }
+  .brand .name{font-size:14px;font-weight:600;letter-spacing:-.01em}
+  .nav{display:flex;flex-direction:column;gap:2px;-webkit-app-region:no-drag}
+  .nav-label{
+    font-size:11px;font-weight:600;color:var(--txt-label);
+    text-transform:uppercase;letter-spacing:.04em;
+    padding:6px 8px 4px;
+  }
+  .nav-item{
+    display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+    padding:7px 8px;border-radius:7px;cursor:pointer;
+    color:var(--txt);font-size:13px;font-weight:500;
+    transition:background .12s,color .12s;
+    background:transparent;border:none;font-family:var(--sans);
+  }
+  /* flat monochrome source-list glyphs, tinted with the row text color */
+  .nav-item .ico{width:22px;height:22px;display:flex;align-items:center;justify-content:center;color:inherit;flex-shrink:0}
+  .nav-item .ico svg{width:18px;height:18px}
+  .nav-item:hover{background:var(--hover)}
+  .nav-item.active{background:var(--sel);color:var(--txt)}
+  .nav-item.active .ico{color:var(--accent)}
+  .nav-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .nav-item .badge{
+    margin-left:auto;font-size:11px;font-variant-numeric:tabular-nums;
+    color:var(--txt-label);font-weight:600;
+  }
+
+  .side-foot{
+    margin-top:auto;-webkit-app-region:no-drag;
+    padding:10px 8px 0;border-top:1px solid var(--line);
+    display:flex;flex-direction:column;gap:5px;
+  }
+  .side-foot .row{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--txt-label)}
+  .side-foot .row .dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;transition:background .3s}
+  .side-foot .row .dot.stale{background:var(--amber)}
+  .side-foot .ico{width:13px;height:13px;color:var(--txt-label);flex-shrink:0}
+
+  /* ---------- CONTENT (solid bg, rounded top-left corner) ---------- */
+  .content{
+    flex:1;background:var(--content-bg);
+    border-top-left-radius:10px;
+    border-bottom-left-radius:10px;
+    border-left:1px solid var(--line);
+    border-top:1px solid var(--line);
+    overflow-y:auto;overflow-x:hidden;
+    position:relative;
+  }
+  /* hidden scrollbars throughout for a native feel — scrolling still works */
+  ::-webkit-scrollbar{width:0;height:0;display:none}
+  *{scrollbar-width:none;-ms-overflow-style:none}
+  .page{display:none;max-width:1080px;margin:0 auto;padding:0 34px 40px}
+  .page.active{display:block;animation:fade .22s ease}
+  .page-scroll{display:contents}
+  /* Processes: rounded card with a fixed header and internally-scrolling rows
+     (bounded max-height so #procList scrolls instead of the whole page) */
+  .table-card{display:flex;flex-direction:column;overflow:hidden;max-height:calc(100vh - 146px)}
+  .table-card .pthead{flex:0 0 auto;background:var(--card)}
+  .table-card #procList{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  .page-head{display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:6;background:linear-gradient(to bottom,var(--content-bg) 64%,transparent);padding:30px 0 34px}
+  .ph-left{display:flex;align-items:center;gap:13px;min-width:0}
+  .ph-icon{width:38px;height:38px;border-radius:10px;flex-shrink:0;display:grid;place-items:center;
+    background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 1px rgba(10,132,255,.18)}
+  .ph-icon svg{width:21px;height:21px}
+  .page-title{font-size:25px;font-weight:700;letter-spacing:-.02em}
+  .page-sub{font-size:13px;color:var(--txt-2);margin-top:3px}
+
+  .card{
+    background:linear-gradient(180deg,var(--card),var(--card-2));border:1px solid var(--line);
+    border-radius:12px;box-shadow:var(--shadow);
+    transition:box-shadow .25s ease, transform .25s ease, background .45s ease;
+  }
+  .card:hover{box-shadow:var(--shadow-hover)}
+  .card:hover:not(.table-card){transform:translateY(-2px)}
+  .card-pad{padding:18px 20px}
+  .sec-title{font-size:13px;font-weight:600;color:var(--txt-2);text-transform:uppercase;letter-spacing:.03em;margin-bottom:13px}
+
+  .grid-2{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}
+  .grid-hero{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+  @media (max-width:980px){.grid-hero,.grid-2{grid-template-columns:1fr}}
+
+  /* ---- battery hero ring (200px, state-encoding from hero-cta) ---- */
+  .hero-card{padding:24px 26px}
+  .hero-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .ring-wrap{display:flex;align-items:center;gap:24px;margin-top:8px}
+  .ring{position:relative;width:188px;height:188px;flex-shrink:0}
+  .ring > svg{transform:rotate(-90deg);display:block}
+  .ring .ring-bg{stroke:var(--track)}
+  .ring .ring-fg{transition:stroke-dashoffset .8s cubic-bezier(.3,.8,.3,1),stroke .4s}
+  .ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring-glyph{width:30px;height:30px;color:var(--txt-2);margin-bottom:2px;display:flex;align-items:center;justify-content:center}
+  .ring-center .big{font-size:42px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+  .ring-center .big small{font-size:21px;font-weight:600;color:var(--txt-2)}
+  .ring-center .unit{font-size:12px;color:var(--txt-2);margin-top:4px;font-weight:500}
+  .ring-meta{display:flex;flex-direction:column;gap:13px;flex:1;min-width:0}
+  .ring-meta .kv{display:flex;flex-direction:column;gap:1px}
+  .ring-meta .k{font-size:11px;color:var(--txt-label);text-transform:uppercase;letter-spacing:.03em;font-weight:600}
+  .ring-meta .v{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .pill{
+    display:inline-flex;align-items:center;gap:5px;
+    padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;
+    letter-spacing:.01em;
+  }
+  .pill svg{width:12px;height:12px}
+  .pill .pdot{width:7px;height:7px;border-radius:50%}
+  .pill.normal{background:rgba(48,209,88,.15);color:#0f7a31}
+  .pill.elevated{background:rgba(255,159,10,.16);color:#8f5600}
+  .pill.high{background:rgba(255,69,58,.15);color:#c4302b}
+  .pill.charging{background:rgba(48,209,88,.15);color:#0f7a31}
+  .pill.charged{background:rgba(10,132,255,.14);color:#0a5fc0}
+  .pill.ac{background:rgba(120,120,128,.16);color:#4b4b52}
+  .pill.discharging{background:rgba(120,120,128,.16);color:#4b4b52}
+  @media (prefers-color-scheme:dark){
+    .pill.normal,.pill.charging{color:#5fe07e}
+    .pill.elevated{color:#ffb84d}
+    .pill.high{color:#ff7066}
+    .pill.charged{color:#5fa8ff}
+    .pill.ac{color:var(--txt-2)}
+    .pill.discharging{color:var(--txt-2)}
+  }
+
+  /* ---- memory: semicircular pressure arc gauge (from hero-cta) ---- */
+  .mem-gauge{position:relative;width:188px;height:108px;margin:6px auto 0;flex-shrink:0}
+  .mem-gauge svg{display:block}
+  .mem-arc-fg{transition:stroke-dashoffset .7s ease,stroke .4s}
+  .mem-readout{text-align:center;margin-top:-10px}
+  .mem-readout .big{font-size:30px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .mem-readout .big small{font-size:15px;color:var(--txt-2);font-weight:600}
+  .mem-readout .lbl{font-size:12px;color:var(--txt-2);margin-top:2px}
+  .mem-detail{display:grid;grid-template-columns:1fr 1fr;gap:9px 18px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+  .mem-detail .row{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;white-space:nowrap}
+  .mem-detail .row span:first-child{color:var(--txt-2)}
+  .mem-detail .row span:last-child{font-weight:600;font-variant-numeric:tabular-nums}
+  .hbar{height:9px;border-radius:99px;background:var(--track);overflow:hidden;margin:14px 0 10px}
+  .hbar>span{display:block;height:100%;border-radius:99px;transition:width .6s ease,background .4s ease}
+
+  /* low power control */
+  .lpm{display:flex;align-items:center;gap:14px;padding:16px 20px}
+  .lpm .lpm-ico{width:40px;height:40px;border-radius:10px;background:linear-gradient(180deg,#ffd84d,#ffb800);color:#7a5600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .lpm .lpm-txt{flex:1;min-width:0}
+  .lpm .lpm-t{font-size:14px;font-weight:600;white-space:nowrap}
+  .lpm .lpm-d{font-size:12px;color:var(--txt-2);margin-top:2px}
+  /* iOS-style 51x31 switch with aria + keyboard (from apple-hig) */
+  .switch{position:relative;width:51px;height:31px;border-radius:31px;background:var(--track);cursor:pointer;transition:background .2s;flex-shrink:0}
+  .switch[aria-checked="true"]{background:var(--green)}
+  .switch[aria-disabled="true"]{opacity:.4;cursor:not-allowed}
+  .switch .knob{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s cubic-bezier(.4,0,.6,1)}
+  .switch[aria-checked="true"] .knob{transform:translateX(20px)}
+  .switch:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  /* insights */
+  #insHero{margin-bottom:16px}
+  .ins-big{font-size:46px;font-weight:800;letter-spacing:-.02em;margin:8px 0 8px;display:flex;align-items:baseline;gap:4px}
+  .ins-big small{font-size:16px;font-weight:600;color:var(--txt-3)}
+  .ins-verdict .pill{font-size:12px}
+  .ins-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
+  .ins-tile-v{font-size:25px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .ins-tile-k{font-size:11.5px;color:var(--txt-3);margin-top:5px;font-weight:600}
+  .ins-tile-sub{font-weight:500;opacity:.85}
+  .ins-top-row{display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--line)}
+  .ins-top-row:first-child{border-top:none}
+  .ins-top-name{font-size:13px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ins-top-val{font-size:12px;color:var(--txt-2);font-variant-numeric:tabular-nums;flex-shrink:0}
+  @media (max-width:980px){.ins-grid{grid-template-columns:repeat(2,1fr)}}
+  /* settings rows */
+  #page-settings .page-scroll>.card{margin-bottom:16px}
+  .set-rows{display:flex;flex-direction:column}
+  .set-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 0;border-top:1px solid var(--line)}
+  .set-row:first-child{border-top:none}
+  .set-row-title{font-size:13.5px;font-weight:600;color:var(--txt)}
+  .set-row-sub{font-size:11.5px;color:var(--txt-3);margin-top:2px}
+  .set-preview{display:flex;align-items:center;gap:12px;margin:6px 0 16px}
+  .set-preview-k{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--txt-3)}
+  .set-mb{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--txt);background:var(--track);padding:5px 11px;border-radius:7px;font-variant-numeric:tabular-nums}
+  .set-thr{display:flex;align-items:center;gap:12px}
+  .set-thr input[type=range]{accent-color:var(--green);width:150px;cursor:pointer}
+  .set-thr-v{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--txt);width:36px;text-align:right}
+
+  /* top energy users on overview */
+  .mini-list{display:flex;flex-direction:column}
+  .mini-row{display:flex;align-items:center;gap:11px;padding:10px 8px;margin:0 -8px;border-radius:8px;border-top:1px solid var(--line);transition:background .12s}
+  .mini-row:first-child{border-top:none}
+  .mini-row:hover{background:var(--hover)}
+
+  /* suggestions widget */
+  .sg-card{margin-bottom:16px}
+  .sg-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .sg-bell{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--txt-2);cursor:pointer;transition:background .12s,color .12s,border-color .12s}
+  .sg-bell:hover{background:var(--hover)}
+  .sg-bell.on{background:var(--accent-soft);border-color:transparent;color:var(--accent-text)}
+  .sg-bell svg{width:13px;height:13px}
+  .sg-list{display:flex;flex-direction:column;gap:2px;margin-top:8px}
+  .sg-item{display:flex;align-items:center;gap:13px;padding:11px 10px;margin:0 -10px;border-radius:10px;transition:background .12s}
+  .sg-item:hover{background:var(--hover)}
+  .sg-ico{width:34px;height:34px;border-radius:9px;flex-shrink:0;display:grid;place-items:center}
+  .sg-ico svg{width:18px;height:18px}
+  .sg-ico.high{background:rgba(255,69,58,.14);color:var(--red-text)}
+  .sg-ico.med{background:rgba(255,159,10,.16);color:#9a6300}
+  .sg-ico.low{background:var(--accent-soft);color:var(--accent)}
+  .sg-ico.good{background:rgba(48,209,88,.16);color:#0f7a31}
+  @media (prefers-color-scheme:dark){.sg-ico.med{color:#ffb84d}.sg-ico.good{color:#5fe07e}}
+  .sg-text{flex:1;min-width:0}
+  .sg-title{font-size:13.5px;font-weight:600}
+  .sg-desc{font-size:12px;color:var(--txt-2);margin-top:1px;line-height:1.45}
+  .sg-btn{flex-shrink:0}
+  .sg-x{flex-shrink:0;width:28px;height:28px;border-radius:7px;border:none;background:transparent;color:var(--txt-3);display:grid;place-items:center;cursor:pointer;transition:background .12s,color .12s;margin-left:2px}
+  .sg-x:hover{background:var(--hover);color:var(--txt-2)}
+  .sg-x svg{width:14px;height:14px}
+  .sg-muted{font-size:11.5px;color:var(--txt-3);padding:10px 2px 0;margin-top:8px;border-top:1px solid var(--line)}
+  .sg-reset{background:none;border:none;color:var(--accent-text);font-size:11.5px;font-weight:600;cursor:pointer;padding:0 2px}
+  .mini-row .rank{font-size:12px;color:var(--txt-label);width:14px;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;flex-shrink:0}
+  .app-ico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:12px;color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+  .app-ico.img{background:transparent!important;border-radius:0;box-shadow:none}
+  .app-ico img{width:100%;height:100%;object-fit:contain;display:block;-webkit-user-drag:none}
+  .mini-row .mt{flex:1;min-width:0}
+  .mini-row .mname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mini-row .msub{font-size:11px;color:var(--txt-2);font-variant-numeric:tabular-nums;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lvl-wrap{display:flex;align-items:center;gap:7px;flex-shrink:0}
+  .lvl-tag{font-size:11px;font-weight:600;width:38px;text-align:right;font-variant-numeric:tabular-nums}
+  .lvl-bar{width:46px;height:5px;border-radius:3px;background:var(--track);overflow:hidden;flex-shrink:0}
+  .lvl-bar i{display:block;height:100%;border-radius:3px;transition:width .5s ease}
+
+  .btn{
+    font-family:var(--sans);font-size:12px;font-weight:600;
+    border:1px solid var(--line-strong);background:var(--card-2);color:var(--txt);
+    padding:6px 13px;border-radius:7px;cursor:pointer;transition:all .12s;
+    -webkit-app-region:no-drag;
+  }
+  .btn:hover{background:var(--hover)}
+  .btn:active{transform:scale(.97)}
+  .btn.quit{color:var(--red-text);border-color:transparent;background:transparent;padding:5px 11px}
+  .btn.quit:hover{background:rgba(255,69,58,.12)}
+  .btn.quit:disabled{opacity:.5;cursor:default}
+  .sys-tag{font-size:11px;color:var(--txt-2);font-weight:600;padding:5px 11px;display:inline-flex;align-items:center;gap:5px}
+  .sys-tag svg{width:12px;height:12px}
+
+  .link-btn{background:none;border:none;color:var(--accent-text);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:6px;-webkit-app-region:no-drag}
+  .link-btn:hover{background:var(--hover)}
+
+  .btn-primary{
+    font-family:var(--sans);font-size:15px;font-weight:600;
+    background:linear-gradient(180deg,#3d9bff,#0a84ff);color:#fff;border:none;
+    padding:13px 30px;border-radius:9px;cursor:pointer;transition:all .15s;
+    box-shadow:0 1px 2px rgba(0,0,0,.18),0 6px 16px rgba(10,132,255,.4);display:inline-flex;align-items:center;gap:9px;
+    -webkit-app-region:no-drag;
+  }
+  .btn-primary:hover{background:linear-gradient(180deg,#2f90ff,#0073e6)}
+  .btn-primary:active{transform:scale(.98)}
+  .btn-primary:disabled{opacity:.6;cursor:default;box-shadow:none}
+  .btn-primary svg{flex-shrink:0}
+
+  /* segmented control */
+  .seg{display:inline-flex;background:var(--track);border-radius:8px;padding:2px;gap:2px}
+  .seg button{
+    font-family:var(--sans);font-size:12px;font-weight:600;color:var(--seg-inactive);
+    border:none;background:transparent;padding:5px 14px;border-radius:6px;cursor:pointer;transition:all .14s;
+  }
+  .seg button.on{background:var(--card);color:var(--txt);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+  /* charge history chart */
+  .chart-card{padding:18px 20px 14px;margin-bottom:16px;overflow:hidden}
+  .hist-seg{display:flex;width:100%;padding:3px;border-radius:9px}
+  .hist-seg button{flex:1;font-size:13.5px;padding:8px 0;font-weight:600}
+  .hist-meta{margin:16px 0 0}
+  .hist-title{font-size:18px;font-weight:700;color:var(--txt);letter-spacing:-.01em}
+  .hist-sub{font-size:13px;color:var(--txt-3);margin-top:3px}
+  .hist-statbar{display:flex;align-items:flex-end;justify-content:space-between;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+  .hist-axis-title{font-size:14.5px;font-weight:700;color:var(--txt)}
+  .hist-stats{display:flex;gap:24px}
+  .hist-stats .hs{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1}
+  .hist-stats .hs b{font-size:15px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums}
+  .hist-stats .hs.now b{color:var(--green)}
+  .hist-stats .hs i{font-size:10px;font-style:normal;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--txt-3);margin-top:2px}
+  .hist-chart{width:100%;margin-top:8px}
+  .hist-chart svg{width:100%;display:block}
+
+  /* PROCESS TABLE (dedicated Impact column from hero-cta) */
+  .pthead{
+    display:grid;grid-template-columns:30px 2.1fr 1.15fr 1.15fr 1.15fr 84px;
+    column-gap:0;padding:16px 22px 12px;align-items:stretch;
+    font-size:11px;font-weight:600;color:var(--txt-label);
+    text-transform:uppercase;letter-spacing:.04em;
+    border-bottom:1px solid var(--line);
+  }
+  .prow{
+    display:grid;grid-template-columns:30px 2.1fr 1.15fr 1.15fr 1.15fr 84px;
+    column-gap:0;padding:12px 22px;align-items:stretch;
+    border-top:1px solid var(--line);transition:background .1s;
+  }
+  /* cell layout + vertical column dividers (between Application | Impact | CPU | Memory | Action) */
+  .pthead>*,.prow>*{display:flex;align-items:center;padding:0 13px;min-width:0}
+  .pthead>*:first-child,.prow>*:first-child{padding:0}
+  .pthead>*:nth-child(n+3),.prow>*:nth-child(n+3){border-left:1px solid var(--line)}
+  .prow:first-child{border-top:none}
+  .prow:hover{background:var(--hover)}
+  .prow .rank{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;justify-content:center}
+  .pname-cell{display:flex;align-items:center;gap:11px;min-width:0}
+  .pname-cell .nm{min-width:0}
+  .pname-cell .nm .t{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pname-cell .nm .s{font-size:11px;color:var(--txt-2);margin-top:1px;font-variant-numeric:tabular-nums}
+  .metric-cell{display:flex;align-items:center;justify-content:center;gap:8px}
+  .metric-cell .mv{font-size:12.5px;font-variant-numeric:tabular-nums;font-weight:600;flex-shrink:0;white-space:nowrap;text-align:right}
+  .metric-cell .mb{flex:1 1 0;max-width:88px;min-width:28px;height:5px;border-radius:3px;background:var(--track);overflow:hidden}
+  .metric-cell .mb i{display:block;height:100%;border-radius:3px;transition:width .4s}
+  .lvl-chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;flex-shrink:0}
+  .lvl-chip svg{width:11px;height:11px;flex-shrink:0}
+  .act-cell{display:flex;justify-content:center}
+
+  /* ENERGY scan orb (from hero-cta) */
+  .scan-hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:40px 30px}
+  .scan-orb{position:relative;width:172px;height:172px;margin-bottom:24px}
+  .scan-orb svg{position:absolute;inset:0}
+  .scan-orb .scan-ring-track{stroke:var(--track)}
+  .scan-orb .scan-ring-fg{transition:stroke-dashoffset .9s ease}
+  .scan-orb .ico{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--accent)}
+  .scan-title{font-size:21px;font-weight:700;letter-spacing:-.01em}
+  .scan-desc{font-size:13px;color:var(--txt-2);max-width:400px;margin:8px auto 24px;line-height:1.5}
+  .watt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:6px}
+  .watt-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center;box-shadow:var(--shadow)}
+  .watt-card .wl{font-size:11px;color:var(--txt-2);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+  .watt-card .wv{font-size:25px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:6px}
+  .watt-card .wv small{font-size:13px;font-weight:600;color:var(--txt-2);margin-left:2px}
+  .watt-card.feature{background:linear-gradient(180deg,#3d9bff,#0a84ff);border-color:transparent;box-shadow:0 4px 16px rgba(10,132,255,.4)}
+  .watt-card.feature .wl,.watt-card.feature .wv{color:#fff}
+  .watt-card.feature .wv small{color:rgba(255,255,255,.8)}
+
+  /* energy task rows w/ numeric value (from hero-cta) */
+  .erow{display:grid;grid-template-columns:24px 170px 1fr 64px;gap:13px;align-items:center;padding:11px 18px;border-top:1px solid var(--line);transition:background .12s}
+  .erow:first-of-type{border-top:none}
+  .erow:hover{background:var(--hover)}
+  .erow .erank{font-size:13px;font-weight:700;color:var(--txt-label);text-align:center;font-variant-numeric:tabular-nums}
+  .erow .ename{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .erow .epid{font-size:11px;color:var(--txt-2);font-weight:500}
+  .erow .ebar{height:8px;border-radius:5px;background:var(--track);overflow:hidden}
+  .erow .ebar i{display:block;height:100%;border-radius:5px;background:var(--amber);transition:width .5s}
+  .erow .eval{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+
+  .spin{animation:spin .9s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .err{color:var(--red-text);font-size:12px;font-weight:600;margin-top:12px}
+  .empty{color:var(--txt-2);font-size:13px;text-align:center;padding:36px}
+  .section-title{font-size:13px;font-weight:600;color:var(--txt-2);text-transform:uppercase;letter-spacing:.03em;margin:26px 4px 12px}
+  .fade-in{animation:fade .32s ease}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+
+  /* global keyboard focus visibility */
+  .btn:focus-visible,.seg button:focus-visible,.link-btn:focus-visible,.btn-primary:focus-visible,.nav-item:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px;
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="drag-strip"></div>
+    <div class="brand">
+      <div class="logo">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
+      </div>
+      <div class="name">Battery Hog</div>
+    </div>
+    <nav class="nav" role="tablist" aria-label="Sections">
+      <div class="nav-label" id="navLabel">Monitor</div>
+      <button type="button" class="nav-item active" data-room="overview" role="tab" aria-selected="true" aria-controls="page-overview" id="tab-overview">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>
+        Overview
+      </button>
+      <button type="button" class="nav-item" data-room="processes" role="tab" aria-selected="false" aria-controls="page-processes" id="tab-processes">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.2"/><circle cx="4" cy="12" r="1.2"/><circle cx="4" cy="18" r="1.2"/></svg></span>
+        Processes
+        <span class="badge" id="navProcCount">—</span>
+      </button>
+      <button type="button" class="nav-item" data-room="health" role="tab" aria-selected="false" aria-controls="page-health" id="tab-health">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8" width="15" height="9" rx="2.2"/><path d="M20 11.5v2"/></svg></span>
+        Battery
+      </button>
+      <button type="button" class="nav-item" data-room="insights" role="tab" aria-selected="false" aria-controls="page-insights" id="tab-insights">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 13l3.5-3.5 3 3L21 6"/></svg></span>
+        Insights
+      </button>
+      <button type="button" class="nav-item" data-room="settings" role="tab" aria-selected="false" aria-controls="page-settings" id="tab-settings">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+        Settings
+      </button>
+    </nav>
+    <div class="side-foot">
+      <div class="row" aria-live="polite"><span class="dot" id="liveDot"></span><span id="updatedLabel">connecting…</span></div>
+      <div class="row"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg><span id="coresLabel">— cores</span></div>
+    </div>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content" id="content">
+
+    <!-- OVERVIEW -->
+    <section class="page active" id="page-overview" role="tabpanel" aria-labelledby="tab-overview" tabindex="0">
+      <div class="page-head">
+        <div class="ph-left">
+          <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></div>
+          <div>
+            <div class="page-title">Overview</div>
+            <div class="page-sub">Your Mac at a glance</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-scroll">
+      <div class="card card-pad sg-card" id="sgCard">
+        <div class="sg-head">
+          <div class="sec-title" style="margin-bottom:0">Suggestions</div>
+          <button class="sg-bell" id="alertToggle" type="button" aria-pressed="false" title="Get notified about low battery, CPU spikes & full charge">
+            <span class="sg-bell-ico"></span><span id="alertLbl">Alerts off</span>
+          </button>
+        </div>
+        <div class="sg-list" id="sgList"></div>
+      </div>
+      <div class="grid-hero">
+        <!-- Battery hero -->
+        <div class="card hero-card" id="battCard">
+          <div class="hero-top">
+            <div class="sec-title" style="margin-bottom:0">Battery</div>
+            <span id="batState"><span class="pill discharging">—</span></span>
+          </div>
+          <div class="ring-wrap">
+            <div class="ring">
+              <svg width="188" height="188" viewBox="0 0 188 188" role="img" id="batSvg" aria-label="Battery status">
+                <circle class="ring-bg" cx="94" cy="94" r="80" fill="none" stroke-width="15"/>
+                <circle class="ring-fg" id="batRing" cx="94" cy="94" r="80" fill="none" stroke-width="15" stroke-linecap="round" stroke-dasharray="502.65" stroke-dashoffset="502.65" stroke="var(--green)"/>
+              </svg>
+              <div class="ring-center">
+                <div class="ring-glyph" id="batGlyph"></div>
+                <div class="big" id="batPct">—</div>
+                <div class="unit" id="batUnit">battery</div>
+              </div>
+            </div>
+            <div class="ring-meta">
+              <div class="kv"><span class="k">Power source</span><span class="v" id="batSource">—</span></div>
+              <div class="kv"><span class="k" id="batTimeK">Time remaining</span><span class="v" id="batTime">—</span></div>
+              <div class="kv"><span class="k" id="batPowerK">Power draw</span><span class="v" id="batPower">—</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Memory pressure arc -->
+        <div class="card card-pad" id="memCard">
+          <div class="hero-top"><div class="sec-title" style="margin-bottom:0">Memory</div><span id="memPressure"><span class="pill normal">—</span></span></div>
+          <div class="mem-gauge">
+            <svg width="188" height="108" viewBox="0 0 188 108" role="img" id="memSvg" aria-label="Memory usage">
+              <path d="M14 100 A80 80 0 0 1 174 100" fill="none" stroke="var(--track)" stroke-width="14" stroke-linecap="round"/>
+              <path class="mem-arc-fg" id="memArc" d="M14 100 A80 80 0 0 1 174 100" fill="none" stroke="var(--accent)" stroke-width="14" stroke-linecap="round" stroke-dasharray="251.3" stroke-dashoffset="251.3"/>
+            </svg>
+          </div>
+          <div class="mem-readout">
+            <div class="big" id="memBig">—</div>
+            <div class="lbl" id="memLbl">used of —</div>
+          </div>
+          <div class="mem-detail">
+            <div class="row"><span>Compressed</span><span id="memComp">—</span></div>
+            <div class="row"><span>Wired</span><span id="memWired">—</span></div>
+            <div class="row"><span>Free</span><span id="memFree">—</span></div>
+            <div class="row"><span>Swap</span><span id="memSwap">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Top energy users -->
+        <div class="card card-pad">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div class="sec-title" style="margin-bottom:0">Top energy users</div>
+            <button class="link-btn" data-jump="processes">See all</button>
+          </div>
+          <div class="mini-list" id="topUsers"></div>
+        </div>
+
+        <!-- Low power + quick stats -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card">
+            <div class="lpm">
+              <div class="lpm-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div>
+              <div class="lpm-txt">
+                <div class="lpm-t">Low Power Mode</div>
+                <div class="lpm-d" id="lpmDesc">Reduce energy use to extend battery life</div>
+              </div>
+              <div class="switch" id="lpmSwitch" role="switch" aria-checked="false" aria-label="Low Power Mode" tabindex="0"><span class="knob"></span></div>
+            </div>
+          </div>
+          <div class="card card-pad" style="flex:1">
+            <div class="sec-title">Quick stats</div>
+            <div class="mem-detail" style="margin-top:0;padding-top:0;border-top:none;grid-template-columns:1fr;gap:11px">
+              <div class="row"><span>CPU cores</span><span id="qsCores">—</span></div>
+              <div class="row"><span>Active apps</span><span id="qsApps">—</span></div>
+              <div class="row"><span>Total memory</span><span id="qsRam">—</span></div>
+              <div class="row"><span>Last sample</span><span id="qsTs">—</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <!-- PROCESSES -->
+    <section class="page" id="page-processes" role="tabpanel" aria-labelledby="tab-processes" tabindex="0">
+      <div class="page-head">
+        <div class="ph-left">
+          <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.2"/><circle cx="4" cy="12" r="1.2"/><circle cx="4" cy="18" r="1.2"/></svg></div>
+          <div>
+            <div class="page-title">Processes</div>
+            <div class="page-sub" id="prSub">Ranked by impact</div>
+          </div>
+        </div>
+        <div class="seg" id="sortSeg" role="radiogroup" aria-label="Sort processes">
+          <button data-sort="score" class="on" role="radio" aria-checked="true">Impact</button>
+          <button data-sort="cpu" role="radio" aria-checked="false">CPU</button>
+          <button data-sort="mem_mb" role="radio" aria-checked="false">Memory</button>
+        </div>
+      </div>
+      <div class="card table-card">
+        <div class="pthead">
+          <span style="justify-content:center">#</span><span>Application</span><span style="justify-content:center">Impact</span><span style="justify-content:center">CPU</span><span style="justify-content:center">Memory</span><span style="justify-content:center">Action</span>
+        </div>
+        <div id="procList"></div>
+      </div>
+    </section>
+
+    <!-- ENERGY -->
+    <section class="page" id="page-health" role="tabpanel" aria-labelledby="tab-health" tabindex="0">
+      <div class="page-head">
+        <div class="ph-left">
+          <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8" width="15" height="9" rx="2.2"/><path d="M20 11.5v2"/></svg></div>
+          <div>
+            <div class="page-title">Battery Health</div>
+            <div class="page-sub">Capacity, cycles &amp; condition</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-scroll">
+      <div class="card chart-card" id="chartCard">
+        <div class="seg hist-seg" id="histSeg" role="radiogroup" aria-label="History range">
+          <button type="button" class="on" data-range="24h" role="radio" aria-checked="true">Last 24 Hours</button>
+          <button type="button" data-range="10d" role="radio" aria-checked="false">Last 10 Days</button>
+        </div>
+        <div class="hist-meta">
+          <div class="hist-title" id="histTitle">Last charged to 100%</div>
+          <div class="hist-sub" id="histSub">—</div>
+        </div>
+        <div class="hist-statbar">
+          <div class="hist-axis-title">Battery Level</div>
+          <div class="hist-stats">
+            <div class="hs now"><b id="hsNow">—</b><i>Now</i></div>
+            <div class="hs"><b id="hsLow">—</b><i>Lowest</i></div>
+            <div class="hs"><b id="hsChg">—</b><i>Charges</i></div>
+          </div>
+        </div>
+        <div class="hist-chart"><svg id="histSvg" viewBox="0 0 780 250" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Battery level over time"></svg></div>
+      </div>
+
+      <div class="grid-hero">
+        <div class="card hero-card" id="healthCard">
+          <div class="hero-top"><div class="sec-title" style="margin-bottom:0">Maximum capacity</div><span id="condChip"><span class="pill normal">—</span></span></div>
+          <div class="stat" style="margin-top:16px"><span class="value" id="healthPct">—</span></div>
+          <div class="hbar"><span id="healthBar"></span></div>
+          <div class="foot" id="healthFoot">of original capacity</div>
+        </div>
+        <div class="card card-pad">
+          <div class="sec-title">Details</div>
+          <div class="mem-detail" style="margin-top:0;padding-top:0;border-top:none;grid-template-columns:1fr;gap:12px">
+            <div class="row"><span>Cycle count</span><span id="hCycles">—</span></div>
+            <div class="row"><span>Condition</span><span id="hCond">—</span></div>
+            <div class="row"><span>Temperature</span><span id="hTemp">—</span></div>
+            <div class="row"><span>Charge now</span><span id="hCharge">—</span></div>
+            <div class="row"><span>Power source</span><span id="hSource">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card card-pad">
+          <div class="sec-title">Capacity</div>
+          <div class="mem-detail" style="margin-top:0;padding-top:0;border-top:none;grid-template-columns:1fr;gap:12px">
+            <div class="row"><span>Full charge capacity</span><span id="hFull">—</span></div>
+            <div class="row"><span>Design capacity</span><span id="hDesign">—</span></div>
+          </div>
+        </div>
+        <div class="card card-pad">
+          <div class="sec-title">About battery health</div>
+          <div class="foot" style="line-height:1.6;margin-top:2px">Maximum capacity is how much charge your battery holds now versus when it was new. Apple considers a battery healthy above about 80%, and batteries are rated for roughly 1000 full charge cycles.</div>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <!-- INSIGHTS -->
+    <section class="page" id="page-insights" role="tabpanel" aria-labelledby="tab-insights" tabindex="0">
+      <div class="page-head">
+        <div class="ph-left">
+          <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 13l3.5-3.5 3 3L21 6"/></svg></div>
+          <div>
+            <div class="page-title">Insights</div>
+            <div class="page-sub">Why your battery drains</div>
+          </div>
+        </div>
+      </div>
+      <div class="page-scroll">
+        <div class="card card-pad" id="insHero">
+          <div class="sec-title" style="margin-bottom:0">Battery life on a charge</div>
+          <div class="ins-big" id="insRuntime">—</div>
+          <div class="ins-verdict" id="insVerdict"></div>
+          <div class="foot" id="insRate" style="margin-top:8px">—</div>
+        </div>
+        <div class="ins-grid">
+          <div class="card card-pad ins-tile"><div class="ins-tile-v" id="insTileRate">—</div><div class="ins-tile-k">Drain rate <span class="ins-tile-sub" id="insTileRateSub"></span></div></div>
+          <div class="card card-pad ins-tile"><div class="ins-tile-v" id="insTileOnBatt">—</div><div class="ins-tile-k">On battery today</div></div>
+          <div class="card card-pad ins-tile"><div class="ins-tile-v" id="insTileCharges">—</div><div class="ins-tile-k">Charges today</div></div>
+          <div class="card card-pad ins-tile"><div class="ins-tile-v" id="insTileWakes">—</div><div class="ins-tile-k">Overnight wake-ups</div></div>
+        </div>
+        <div class="card card-pad">
+          <div class="sec-title">Biggest draws right now</div>
+          <div id="insTop"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="page" id="page-settings" role="tabpanel" aria-labelledby="tab-settings" tabindex="0">
+      <div class="page-head">
+        <div class="ph-left">
+          <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+          <div>
+            <div class="page-title">Settings</div>
+            <div class="page-sub">Menu bar &amp; alerts</div>
+          </div>
+        </div>
+      </div>
+      <div class="page-scroll">
+        <div class="card card-pad">
+          <div class="sec-title">Menu bar</div>
+          <div class="set-preview"><span class="set-preview-k">Preview</span><span class="set-mb" id="mbPreview"><span class="set-mb-ico">🔋</span><span id="mbPreviewTxt">100%</span></span></div>
+          <div class="set-rows">
+            <div class="set-row" data-mb="percent"><div class="set-row-t"><div class="set-row-title">Battery percentage</div><div class="set-row-sub">e.g. 100%</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
+            <div class="set-row" data-mb="watts"><div class="set-row-t"><div class="set-row-title">Power draw</div><div class="set-row-sub">live wattage when on battery, e.g. 10W</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
+            <div class="set-row" data-mb="time"><div class="set-row-t"><div class="set-row-title">Time remaining</div><div class="set-row-sub">e.g. 5:35</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
+            <div class="set-row" data-mb="hog"><div class="set-row-t"><div class="set-row-title">Top app</div><div class="set-row-sub">biggest battery user + its CPU</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
+          </div>
+        </div>
+
+        <div class="card card-pad">
+          <div class="sec-title">Alerts</div>
+          <div class="set-rows">
+            <div class="set-row" data-set="alerts"><div class="set-row-t"><div class="set-row-title">Notifications</div><div class="set-row-sub">low battery, full charge &amp; runaway-CPU apps</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
+            <div class="set-row"><div class="set-row-t"><div class="set-row-title">Low-battery alert at</div><div class="set-row-sub">notify when battery drops to this level</div></div><div class="set-thr"><input type="range" id="thrRange" min="5" max="50" step="5" value="20"><span class="set-thr-v" id="thrVal">20%</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+const palette=["#0a84ff","#5e5ce6","#30d158","#ff9f0a","#ff453a","#40c8e0","#bf5af2","#ff375f","#64d2ff","#ac8e68"];
+const BAT_C=2*Math.PI*80;      // battery ring circumference
+const MEM_C=251.3;             // semicircle arc length (pi * 80)
+const SCAN_C=2*Math.PI*74;     // scan orb circumference
+
+let state={ data:null, room:"overview", sort:"score", lastTs:null, energy:null, measuring:false, pendingMute:new Set(), pendingUnmute:false, pendingSettings:{} };
+
+/* ---------- helpers ---------- */
+function fmtGB(g){ return (g==null)?"—":(g>=10?g.toFixed(1):g.toFixed(2))+" GB"; }
+function fmtMem(mb){ if(mb==null) return "—"; return mb>=1024?(mb/1024).toFixed(mb>=10240?0:1)+" GB":Math.round(mb)+" MB"; }
+function colorAt(level){ return level==="high"?"var(--red)":level==="med"?"var(--amber)":"var(--green)"; }
+function levelLabel(level){ return level==="high"?"High":level==="med"?"Med":"Low"; }
+function fmtW(v){ const n=Number(v); return isFinite(n)?n.toFixed(2):"—"; }
+function appColor(name){ let h=0; for(let i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))>>>0; return palette[h%palette.length]; }
+function initials(name){
+  const w=name.replace(/[^A-Za-z0-9 ]/g,"").trim().split(/\s+/).filter(Boolean);
+  if(!w.length) return name.slice(0,2).toUpperCase();
+  return (w.length===1?w[0].slice(0,2):w[0][0]+w[1][0]).toUpperCase();
+}
+function appIconHTML(p,px){
+  if(p.bundle && p.path){
+    return `<span class="app-ico img" style="width:${px}px;height:${px}px"><img src="appicon://i?p=${encodeURIComponent(p.path)}" alt="" draggable="false"></span>`;
+  }
+  return `<span class="app-ico" style="background:${appColor(p.name)};width:${px}px;height:${px}px;font-size:${Math.round(px*0.4)}px">${esc(initials(p.name))}</span>`;
+}
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+const boltSVG='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>';
+const checkSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+const battSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2"/><path d="M20 10v4"/></svg>';
+const lockSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+/* small non-color level cues (icon differs per level) */
+const lvlIcon={
+  high:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg>',
+  med:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="18" y2="12"/></svg>',
+  low:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'
+};
+function lvlIconFor(level){ return lvlIcon[level]||lvlIcon.low; }
+
+/* ---------- room switching ---------- */
+function go(room){
+  state.room=room;
+  $$(".nav-item").forEach(n=>{
+    const on=n.dataset.room===room;
+    n.classList.toggle("active",on);
+    n.setAttribute("aria-selected",on?"true":"false");
+  });
+  $$(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+room));
+  $("#content").scrollTop=0;
+  if(room==="health") loadHistory();
+}
+$$(".nav-item").forEach(it=>{
+  it.addEventListener("click",()=>go(it.dataset.room));
+  it.addEventListener("keydown",e=>{
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(it.dataset.room); }
+  });
+});
+document.addEventListener("click",e=>{ const j=e.target.closest("[data-jump]"); if(j) go(j.dataset.jump); });
+
+/* ---------- sort (preserved across refresh via state.sort) ---------- */
+$("#sortSeg").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  state.sort=b.dataset.sort;
+  $$("#sortSeg button").forEach(x=>{
+    const on=x===b;
+    x.classList.toggle("on",on);
+    x.setAttribute("aria-checked",on?"true":"false");
+  });
+  renderProcesses();
+});
+
+/* ---------- delegated quit handlers (no inline onclick — safe with any app name) ---------- */
+function delegatedKill(e){
+  const btn=e.target.closest("[data-act='kill']"); if(!btn) return;
+  let pids=[];
+  try{ pids=JSON.parse(btn.dataset.pids||"[]"); }catch(_){ pids=[]; }
+  killProc(btn.dataset.name||"", btn.dataset.bundle==="1", pids);
+}
+$("#topUsers").addEventListener("click",delegatedKill);
+$("#procList").addEventListener("click",delegatedKill);
+$("#sgList").addEventListener("click",delegatedKill);
+$("#sgList").addEventListener("click",e=>{ if(e.target.closest("[data-act='lpm']")) toggleLP(); });
+$("#alertToggle").addEventListener("click",toggleAlerts);
+$$('#page-settings .set-row[data-mb] .switch').forEach(sw=>{
+  const k=sw.closest(".set-row").dataset.mb;
+  const t=()=>setMenubar(k, sw.getAttribute("aria-checked")!=="true");
+  sw.addEventListener("click",t);
+  sw.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); t(); } });
+});
+(function(){ const sw=document.querySelector('#page-settings .set-row[data-set="alerts"] .switch'); if(!sw) return;
+  sw.addEventListener("click",toggleAlerts);
+  sw.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleAlerts(); } });
+})();
+(function(){ const thr=$("#thrRange"); if(!thr) return;
+  thr.addEventListener("input",()=>{ const v=parseInt(thr.value,10)||20; $("#thrVal").textContent=v+"%"; state.pendingSettings.low_threshold=v; applyPendingSettings(); });
+  thr.addEventListener("change",()=>{ const v=parseInt(thr.value,10)||20; state.pendingSettings.low_threshold=v; fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({low_threshold:v})}).catch(()=>{}); });
+})();
+$("#sgList").addEventListener("click",e=>{
+  const ig=e.target.closest("[data-act='ignore']"); if(ig){ muteApp(ig.dataset.name,true); return; }
+  if(e.target.closest("[data-act='unmute']")) muteApp(null,false);
+});
+/* applies any not-yet-confirmed mutes on top of the current data so the UI
+   updates instantly and an in-flight stale poll can't flash the app back */
+function applyPending(){
+  if(!state.data) return;
+  const base = state.pendingUnmute ? [] : (state.data.ignored||[]);
+  const s=new Set(base); state.pendingMute.forEach(n=>s.add(n));
+  state.data.ignored=[...s];
+}
+async function muteApp(name,on){
+  if(on){ if(name) state.pendingMute.add(name); }
+  else { state.pendingMute.clear(); state.pendingUnmute=true; }
+  applyPending();
+  renderSuggestions();                       // instant — no waiting on the network
+  toast(on?("Won't suggest quitting "+name+" again"):"Suggestions reset");
+  try{
+    const r=await fetch("/api/ignore",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(on?{name:name,on:true}:{reset:true})});
+    const j=await r.json();
+    if(j&&j.ignored){
+      if(!on) state.pendingUnmute=false;
+      state.pendingMute.clear();
+      if(state.data){ state.data.ignored=j.ignored; renderSuggestions(); }
+    }
+  }catch(e){}
+}
+
+/* ---------- fetch ---------- */
+async function fetchStats(){
+  try{
+    const r=await fetch("/api/stats",{cache:"no-store"});
+    const d=await r.json();
+    state.data=d; state.lastTs=Date.now();
+    // drop optimistic mutes the server has now confirmed; keep the rest
+    const srv=new Set(d.ignored||[]);
+    state.pendingMute.forEach(n=>{ if(srv.has(n)) state.pendingMute.delete(n); });
+    if(state.pendingUnmute && srv.size===0) state.pendingUnmute=false;
+    applyPending();
+    // same for pending settings (alerts / menubar / threshold)
+    const sv=d.settings||{}, ps=state.pendingSettings;
+    if("alerts" in ps && sv.alerts===ps.alerts) delete ps.alerts;
+    if("low_threshold" in ps && sv.low_threshold===ps.low_threshold) delete ps.low_threshold;
+    if(ps.menubar){ const mb=sv.menubar||{}; for(const k in ps.menubar){ if(mb[k]===ps.menubar[k]) delete ps.menubar[k]; } if(!Object.keys(ps.menubar).length) delete ps.menubar; }
+    applyPendingSettings();
+    render();
+    $("#liveDot").style.background="";
+  }catch(e){
+    $("#liveDot").style.background="var(--red)";
+    $("#updatedLabel").textContent="connection lost";
+  }
+}
+
+/* ---------- render all (does not change room or sort) ---------- */
+function render(){
+  const d=state.data; if(!d) return;
+  renderBattery(); renderMemory(); renderLowPower(); renderTopUsers(); renderProcesses(); renderQuick(); renderHealth(); renderSuggestions(); renderSettings(); renderInsights();
+  $("#navProcCount").textContent=d.processes? d.processes.length : "—";
+  $("#coresLabel").textContent=(d.ncpu??"—")+" cores";
+  updateHistNow();
+  updateAge();
+}
+
+/* ---------- battery (state-encoding ring) ---------- */
+function renderBattery(){
+  const b=state.data.battery||{};
+  const ring=$("#batRing"), glyph=$("#batGlyph");
+  if(b.percent==null){
+    $("#batPct").textContent="N/A";
+    $("#batUnit").textContent="no battery";
+    ring.style.stroke="var(--txt-3)";
+    ring.style.strokeDashoffset=BAT_C;
+    glyph.innerHTML="";
+    $("#batState").innerHTML='<span class="pill discharging">No battery</span>';
+    $("#batSource").textContent=b.on_ac?"AC power":"—";
+    $("#batTimeK").textContent="Status";
+    $("#batTime").textContent="—";
+    $("#batPowerK").textContent="Power draw"; $("#batPower").textContent="—";
+    $("#batSvg").setAttribute("aria-label","No battery detected");
+    return;
+  }
+  const pct=Math.round(b.percent);
+  $("#batPct").innerHTML=pct+'<small>%</small>';
+  $("#batUnit").textContent="battery";
+  const st=b.state||"discharging";
+  const low=(st==="discharging"&&pct<=20);
+  let col, glow, tint;
+  if(st==="charging"||st==="charged"){ col="var(--green)"; glow="rgba(48,209,88,.45)"; tint="rgba(48,209,88,.18)"; }
+  else if(st==="ac"){ col="var(--accent)"; glow="rgba(10,132,255,.4)"; tint="rgba(10,132,255,.15)"; }
+  else if(pct<=20){ col="var(--red)"; glow="rgba(255,69,58,.45)"; tint="rgba(255,69,58,.18)"; }
+  else if(pct<=40){ col="var(--amber)"; glow="rgba(255,159,10,.45)"; tint="rgba(255,159,10,.17)"; }
+  else { col="var(--green)"; glow="rgba(48,209,88,.45)"; tint="rgba(48,209,88,.18)"; }  // discharging, healthy
+  ring.style.stroke=col;
+  ring.style.filter="drop-shadow(0 1px 5px "+glow+")";
+  const _bc=document.getElementById("battCard");
+  if(_bc) _bc.style.background="radial-gradient(115% 80% at 50% -12%,"+tint+",transparent 60%),linear-gradient(180deg,var(--card),var(--card-2))";
+  ring.style.strokeDashoffset=BAT_C*(1-pct/100);
+  glyph.innerHTML = st==="charging"?boltSVG : st==="charged"?checkSVG : battSVG;
+  const stMap={charging:"Charging",charged:"Charged",discharging:"On battery",ac:"Plugged in"};
+  let stText=stMap[st]||st;
+  if(low) stText="Low battery";   // low is only set for discharging <= 20%
+  const stIco={charging:boltSVG,charged:checkSVG,discharging:battSVG,ac:battSVG}[st]||battSVG;
+  const pillClass=low?"high":st;
+  $("#batState").innerHTML=`<span class="pill ${pillClass}">${stIco}${stText}</span>`;
+  $("#batSource").textContent=b.on_ac?"Power adapter":"Battery";
+  if(b.time && (st==="charging"||st==="discharging")){ $("#batTimeK").textContent=st==="charging"?"Until full":"Time remaining"; $("#batTime").textContent=b.time; }
+  else{ $("#batTimeK").textContent="Status"; $("#batTime").textContent= st==="charged"?"Fully charged":st==="ac"?"Not charging":st==="charging"?"Charging…":"Calculating…"; }
+  const pw=state.data.power||{};
+  if(pw.watts!=null){
+    if(pw.direction==="charging"){ $("#batPowerK").textContent="Charging at"; $("#batPower").textContent=pw.watts.toFixed(1)+" W"; }
+    else if(pw.direction==="ac"){ $("#batPowerK").textContent="Power draw"; $("#batPower").textContent=pw.watts<0.5?"On adapter":pw.watts.toFixed(1)+" W"; }
+    else { $("#batPowerK").textContent="Power draw"; $("#batPower").textContent=pw.watts.toFixed(1)+" W"; }
+  } else { $("#batPowerK").textContent="Power draw"; $("#batPower").textContent="—"; }
+  $("#batSvg").setAttribute("aria-label",`Battery ${pct} percent, ${stText}`);
+}
+
+/* ---------- memory (pressure arc) ---------- */
+function renderMemory(){
+  const m=state.data.memory||{};
+  const total=m.total_gb||1, used=m.used_gb||0;
+  const frac=Math.min(1,used/total);
+  const arc=$("#memArc");
+  arc.style.strokeDashoffset=MEM_C*(1-frac);
+  const col=m.pressure==="high"?"var(--red)":m.pressure==="elevated"?"var(--amber)":"var(--accent)";
+  const glow=m.pressure==="high"?"rgba(255,69,58,.4)":m.pressure==="elevated"?"rgba(255,159,10,.4)":"rgba(10,132,255,.35)";
+  arc.style.stroke=col;
+  arc.style.filter="drop-shadow(0 1px 4px "+glow+")";
+  const tint=m.pressure==="high"?"rgba(255,69,58,.17)":m.pressure==="elevated"?"rgba(255,159,10,.16)":"rgba(48,209,88,.15)";
+  const _mc=document.getElementById("memCard");
+  if(_mc) _mc.style.background="radial-gradient(115% 80% at 50% -12%,"+tint+",transparent 60%),linear-gradient(180deg,var(--card),var(--card-2))";
+  $("#memBig").innerHTML=Math.round(frac*100)+'<small>%</small>';
+  $("#memLbl").textContent=fmtGB(used)+" used of "+fmtGB(total);
+  const pr=m.pressure||"normal";
+  const prLabel={normal:"Normal",elevated:"Elevated",high:"High"}[pr]||pr;
+  $("#memPressure").innerHTML=`<span class="pill ${pr}"><span class="pdot" style="background:currentColor"></span>${prLabel}</span>`;
+  $("#memComp").textContent=fmtGB(m.compressed_gb);
+  $("#memWired").textContent=fmtGB(m.wired_gb);
+  $("#memFree").textContent=fmtGB(m.free_gb);
+  $("#memSwap").textContent=m.swap_used_mb?fmtMem(m.swap_used_mb):"0 MB";
+  $("#memSvg").setAttribute("aria-label",`Memory ${Math.round(frac*100)} percent used, pressure ${prLabel}`);
+}
+
+/* ---------- low power (focus guard so refresh doesn't clobber) ---------- */
+function renderLowPower(){
+  const lp=state.data.lowpower;
+  const sw=$("#lpmSwitch");
+  if(sw===document.activeElement && sw.dataset.pending==="1") return; // mid-interaction guard
+  if(lp===null||lp===undefined){
+    sw.setAttribute("aria-disabled","true");
+    sw.setAttribute("aria-checked","false");
+    sw.setAttribute("tabindex","-1");
+    $("#lpmDesc").textContent="Unavailable on this Mac";
+  }else{
+    sw.removeAttribute("aria-disabled");
+    sw.setAttribute("tabindex","0");
+    sw.setAttribute("aria-checked", lp?"true":"false");
+    $("#lpmDesc").textContent=lp?"On — reducing energy use":"Reduce energy use to extend battery life";
+  }
+}
+
+/* ---------- top energy users ---------- */
+function renderTopUsers(){
+  const top=(state.data.processes||[]).slice(0,4);
+  const maxScore=top.length?Math.max(...top.map(p=>p.score||0),1):1;
+  $("#topUsers").innerHTML=top.map((p,i)=>{
+    const w=Math.max(6,Math.round((p.score||0)/maxScore*100));
+    const action=p.protected
+      ? `<span class="sys-tag">${lockSVG}System</span>`
+      : `<button class="btn quit" data-act="kill" data-name="${esc(p.name)}" data-bundle="${p.bundle?1:0}" data-pids="${esc(JSON.stringify(p.pids||[]))}">Quit</button>`;
+    return `<div class="mini-row">
+      <span class="rank">${i+1}</span>
+      ${appIconHTML(p,30)}
+      <span class="mt">
+        <div class="mname">${esc(p.name)}</div>
+        <div class="msub">${(p.cpu||0).toFixed(0)}% CPU · ${fmtMem(p.mem_mb)}</div>
+      </span>
+      <span class="lvl-wrap">
+        <span class="lvl-tag" style="color:${colorAt(p.level)}">${levelLabel(p.level)}</span>
+        <span class="lvl-bar"><i style="width:${w}%;background:${colorAt(p.level)}"></i></span>
+      </span>
+      ${action}
+    </div>`;
+  }).join("")||`<div class="empty">No active processes</div>`;
+}
+
+/* ---------- quick stats ---------- */
+function renderQuick(){
+  const d=state.data, m=d.memory||{};
+  $("#qsCores").textContent=d.ncpu??"—";
+  $("#qsApps").textContent=(d.processes||[]).length;
+  $("#qsRam").textContent=fmtGB(m.total_gb);
+}
+
+/* ---------- suggestions (derived from live data; no extra permissions) ---------- */
+const sgIcon={
+  mem:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 6V4M12 6V4M16 6V4M8 20v-2M12 20v-2M16 20v-2"/></svg>',
+  cpu:boltSVG, batt:battSVG, good:checkSVG,
+  restart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 2.7-6.4"/><path d="M3 4v4h4"/></svg>',
+  moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A8 8 0 1 1 11.2 3 6.5 6.5 0 0 0 21 12.8z"/></svg>',
+  bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 1 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
+  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4"/><circle cx="12" cy="16.8" r=".7" fill="currentColor" stroke="none"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>'
+};
+function renderAlertToggle(){
+  const btn=$("#alertToggle"); if(!btn) return;
+  const on=!!(state.data&&state.data.settings&&state.data.settings.alerts);
+  const ico=btn.querySelector(".sg-bell-ico"); if(ico&&!ico.innerHTML) ico.innerHTML=sgIcon.bell;
+  btn.classList.toggle("on",on);
+  btn.setAttribute("aria-pressed",on?"true":"false");
+  const lbl=$("#alertLbl"); if(lbl) lbl.textContent=on?"Alerts on":"Alerts off";
+}
+/* user settings changes stay applied until the server echoes them back, so an
+   in-flight /api/stats poll can't revert a toggle the instant you flip it */
+function applyPendingSettings(){
+  if(!state.data) return;
+  state.data.settings=state.data.settings||{};
+  const ps=state.pendingSettings;
+  if("alerts" in ps) state.data.settings.alerts=ps.alerts;
+  if("low_threshold" in ps) state.data.settings.low_threshold=ps.low_threshold;
+  if(ps.menubar) state.data.settings.menubar=Object.assign({},state.data.settings.menubar||{},ps.menubar);
+}
+async function toggleAlerts(){
+  const cur=!!(state.data&&state.data.settings&&state.data.settings.alerts);
+  state.pendingSettings.alerts=!cur;
+  applyPendingSettings(); renderAlertToggle(); renderSettings();
+  toast(!cur?"Alerts on — low battery, CPU spikes & full charge":"Alerts off");
+  try{ await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({alerts:!cur})}); }catch(e){}
+}
+
+/* ---------- settings (menu bar + alerts) ---------- */
+function mbPreviewText(){
+  const s=(state.data&&state.data.settings&&state.data.settings.menubar)||{};
+  const b=(state.data&&state.data.battery)||{}, pw=(state.data&&state.data.power)||{};
+  const procs=(state.data&&state.data.processes)||[];
+  const parts=[];
+  if(s.percent!==false && b.percent!=null) parts.push(b.percent+"%");
+  if(s.watts && pw.watts!=null && pw.direction!=="ac") parts.push(Math.round(pw.watts)+"W");
+  if(s.time && b.time && (b.state==="charging"||b.state==="discharging")) parts.push(b.time);
+  if(s.hog && procs[0]){ let n=procs[0].name; if(n.length>12) n=n.slice(0,11)+"…"; parts.push(n+" "+Math.round(procs[0].cpu||0)+"%"); }
+  return parts.length?parts.join(" · "):"just the icon";
+}
+function renderSettings(){
+  const st=(state.data&&state.data.settings)||{}, mb=st.menubar||{};
+  $$('#page-settings .set-row[data-mb]').forEach(row=>{
+    const k=row.dataset.mb, on=(k==="percent")?(mb.percent!==false):!!mb[k];
+    const sw=row.querySelector(".switch"); if(sw) sw.setAttribute("aria-checked",on?"true":"false");
+  });
+  const asw=document.querySelector('#page-settings .set-row[data-set="alerts"] .switch');
+  if(asw) asw.setAttribute("aria-checked",st.alerts?"true":"false");
+  const thr=$("#thrRange"), thv=$("#thrVal");
+  if(thr&&document.activeElement!==thr) thr.value=st.low_threshold||20;
+  if(thv) thv.textContent=(st.low_threshold||20)+"%";
+  const pv=$("#mbPreviewTxt"); if(pv) pv.textContent=mbPreviewText();
+}
+function setMenubar(key,on){
+  state.pendingSettings.menubar=Object.assign({},state.pendingSettings.menubar||{},{[key]:on});
+  applyPendingSettings(); renderSettings();
+  fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({menubar:{[key]:on}})}).catch(()=>{});
+}
+
+/* ---------- insights (drain analysis) ---------- */
+function fmtHrs(h){ if(h==null) return "—"; if(h>=1) return (h>=10?Math.round(h):h.toFixed(1))+"h"; return Math.round(h*60)+"m"; }
+function renderInsights(){
+  const d=state.data; if(!d) return;
+  const ins=d.insights||{}, t=ins.today||{}, w=ins.week||{};
+  const rt=(t.runtime_h!=null)?t.runtime_h:w.runtime_h;
+  const rate=(t.rate!=null)?t.rate:w.rate;
+  const rEl=$("#insRuntime"); if(rEl) rEl.innerHTML = rt!=null ? ("≈ "+(rt>=10?Math.round(rt):rt.toFixed(1))+'<small>h per charge</small>') : "—";
+  let verdict="Not enough data yet", vc="ac";
+  if(rt!=null){ if(rt<5){verdict="Heavy drain";vc="high";} else if(rt<8){verdict="Moderate drain";vc="elevated";} else {verdict="Light drain";vc="normal";} }
+  const vEl=$("#insVerdict"); if(vEl) vEl.innerHTML=`<span class="pill ${vc}">${verdict}</span>`;
+  const rateEl=$("#insRate");
+  if(rateEl) rateEl.textContent = rate!=null
+    ? ("Draining about "+rate+"% per hour on battery"+((ins.wakes||0)>=15?" · "+ins.wakes+" overnight wake-ups are adding to it.":"."))
+    : "Use your Mac on battery for a little while and this will fill in.";
+  setStat("#insTileRate", rate!=null?rate+"%/h":"—");
+  const sub=$("#insTileRateSub"); if(sub) sub.textContent = w.rate!=null?("· wk "+w.rate):"";
+  setStat("#insTileOnBatt", fmtHrs(t.on_battery_h));
+  setStat("#insTileCharges", ins.charges!=null?String(ins.charges):"—");
+  setStat("#insTileWakes", ins.wakes!=null?String(ins.wakes):"—");
+  const procs=(d.processes||[]).filter(p=>!p.protected).slice(0,4);
+  const top=$("#insTop");
+  if(top) top.innerHTML = procs.length
+    ? procs.map(p=>`<div class="ins-top-row">${appIconHTML(p,22)}<span class="ins-top-name">${esc(p.name)}</span><span class="ins-top-val">${levelLabel(p.level)} · ${(p.cpu||0).toFixed(0)}% · ${fmtMem(p.mem_mb)}</span></div>`).join("")
+    : `<div class="foot">Nothing notable right now.</div>`;
+}
+function renderSuggestions(){
+  const d=state.data; if(!d) return;
+  renderAlertToggle();
+  const list=$("#sgList"); if(!list) return;
+  const m=d.memory||{}, b=d.battery||{}, hh=d.health||{}, procs=d.processes||[];
+  const ignored=new Set(d.ignored||[]);
+  const hogs=procs.filter(p=>!p.protected && !ignored.has(p.name));
+  const topCpu=hogs.slice().sort((a,x)=>(x.cpu||0)-(a.cpu||0))[0];
+  const topMem=hogs.slice().sort((a,x)=>(x.mem_mb||0)-(a.mem_mb||0))[0];
+  const S=[];
+  if(m.pressure==="high"){
+    if(topMem) S.push({sev:"high",icon:"mem",title:"Memory is under high pressure",
+      desc:(m.swap_used_mb?fmtMem(m.swap_used_mb)+" on swap — ":"")+"freeing RAM will ease the battery drain.",
+      app:topMem,act:{kill:topMem,label:"Quit "+topMem.name}});
+    else S.push({sev:"high",icon:"mem",title:"Memory is under high pressure",
+      desc:"Close a few apps you're not using to free RAM.",act:{jump:"processes",label:"View apps"}});
+  }else if(m.pressure==="elevated"){
+    S.push({sev:"low",icon:"mem",title:"Memory is getting tight",
+      desc:"Closing a few unused apps will keep things smooth.",act:{jump:"processes",label:"View apps"}});
+  }
+  if(!b.on_ac && b.percent!=null && b.percent<=20 && d.lowpower===false){
+    S.push({sev:"high",icon:"batt",title:"Battery is low ("+b.percent+"%)",
+      desc:"Turn on Low Power Mode to stretch the remaining charge.",act:{lpm:true,label:"Turn on"}});
+  }
+  if(topCpu && (topCpu.cpu||0)>=40 && !(m.pressure==="high" && topMem && topCpu.name===topMem.name)){
+    S.push({sev:"med",icon:"cpu",title:topCpu.name+" is working hard",
+      desc:"Using "+Math.round(topCpu.cpu)+"% CPU — quitting it would save power.",app:topCpu,act:{kill:topCpu,label:"Quit"}});
+  }
+  if(b.on_ac && d.lowpower===true){
+    S.push({sev:"low",icon:"batt",title:"Low Power Mode is on while plugged in",
+      desc:"You can turn it off for full performance on the adapter.",act:{lpm:false,label:"Turn off"}});
+  }
+  if(hh.health!=null && hh.health<80){
+    S.push({sev:"low",icon:"batt",title:"Battery health is "+hh.health+"%",
+      desc:"It holds less charge than when new — a service check may be worth it.",act:null});
+  }
+  if(hh.temp_c!=null && hh.temp_c>=35){
+    S.push({sev:"low",icon:"warn",title:"Battery is warm ("+Math.round(hh.temp_c)+"°C)",
+      desc:"Easing off heavy load helps long-term battery health.",act:null});
+  }
+  const up=d.uptime||{}, wakes=d.wakes||0;
+  if(up.days!=null && up.days>=3){
+    const dd=Math.round(up.days);
+    S.push({sev: up.days>=7?"med":"low", icon:"restart",
+      title:"Your Mac's been up "+dd+" day"+(dd===1?"":"s"),
+      desc:"A restart clears leaked memory and frees up RAM.",act:null});
+  }
+  if(wakes>=15){
+    S.push({sev:"low",icon:"moon",title:"Woke "+wakes+"× recently while asleep",
+      desc:"A background app may be waking your Mac and draining the battery.",act:null});
+  }
+  if(b.on_ac && b.percent!=null && b.percent>=100){
+    S.push({sev:"low",icon:"batt",title:"Fully charged & plugged in",
+      desc:"Unplugging now and then helps long-term battery health.",act:null});
+  }
+  const rank={high:0,med:1,low:2};
+  S.sort((a,x)=>rank[a.sev]-rank[x.sev]);
+  const muted = ignored.size?`<div class="sg-muted">Muted: ${[...ignored].map(esc).join(", ")} · <button class="sg-reset" data-act="unmute">Reset</button></div>`:"";
+  if(!S.length){
+    list.innerHTML=`<div class="sg-item"><span class="sg-ico good">${sgIcon.good}</span><div class="sg-text"><div class="sg-title">You're all set</div><div class="sg-desc">Nothing's hammering your battery right now.</div></div></div>`+muted;
+    return;
+  }
+  list.innerHTML=S.slice(0,4).map(s=>{
+    let act="";
+    if(s.act&&s.act.kill){ const p=s.act.kill;
+      act=`<button class="btn quit sg-btn" data-act="kill" data-name="${esc(p.name)}" data-bundle="${p.bundle?1:0}" data-pids="${esc(JSON.stringify(p.pids||[]))}">${esc(s.act.label)}</button>`;
+    }else if(s.act&&s.act.lpm!==undefined){
+      act=`<button class="btn sg-btn" data-act="lpm">${esc(s.act.label)}</button>`;
+    }else if(s.act&&s.act.jump){
+      act=`<button class="btn sg-btn" data-jump="${s.act.jump}">${esc(s.act.label)}</button>`;
+    }
+    const mute = s.app?`<button class="sg-x" data-act="ignore" data-name="${esc(s.app.name)}" title="Don't suggest quitting ${esc(s.app.name)}" aria-label="Mute ${esc(s.app.name)}">${sgIcon.x}</button>`:"";
+    return `<div class="sg-item"><span class="sg-ico ${s.sev}">${sgIcon[s.icon]||sgIcon.warn}</span><div class="sg-text"><div class="sg-title">${esc(s.title)}</div><div class="sg-desc">${esc(s.desc)}</div></div>${act}${mute}</div>`;
+  }).join("")+muted;
+}
+
+/* ---------- processes (sortable, Impact column) ---------- */
+function procRowStructure(p){
+  return `<span class="rank"></span>`
+    +`<span class="pname-cell">${appIconHTML(p,28)}<span class="nm"><div class="t">${esc(p.name)}</div><div class="s"></div></span></span>`
+    +`<span class="metric-cell m-imp"><span class="mb"><i></i></span><span class="mv"></span></span>`
+    +`<span class="metric-cell m-cpu"><span class="mb"><i style="background:var(--accent)"></i></span><span class="mv"></span></span>`
+    +`<span class="metric-cell m-mem"><span class="mb"><i style="background:var(--teal)"></i></span><span class="mv"></span></span>`
+    +`<span class="act-cell"></span>`;
+}
+function updateProcRow(el,p,i,maxCpu,maxMem,maxScore){
+  const scCol=colorAt(p.level);
+  const rk=el.querySelector(".rank"); rk.textContent=i+1; rk.style.color=i<3?scCol:"var(--txt-2)";
+  el.querySelector(".nm .s").textContent=p.procs>1?p.procs+" processes":"1 process";
+  const ii=el.querySelector(".m-imp i"); ii.style.width=Math.max(3,Math.round((p.score||0)/maxScore*100))+"%"; ii.style.background=scCol;
+  const iv=el.querySelector(".m-imp .mv"); iv.textContent=levelLabel(p.level); iv.style.color=scCol;
+  el.querySelector(".m-cpu i").style.width=Math.max(3,Math.round((p.cpu||0)/maxCpu*100))+"%";
+  el.querySelector(".m-cpu .mv").textContent=(p.cpu||0).toFixed(1)+"%";
+  el.querySelector(".m-mem i").style.width=Math.max(3,Math.round((p.mem_mb||0)/maxMem*100))+"%";
+  el.querySelector(".m-mem .mv").textContent=fmtMem(p.mem_mb);
+  const act=el.querySelector(".act-cell"), sys=p.protected?"1":"0";
+  if(el.dataset.sys!==sys){
+    el.dataset.sys=sys;
+    act.innerHTML=p.protected?`<span class="sys-tag">${lockSVG}System</span>`
+      :`<button class="btn quit" data-act="kill" data-name="${esc(p.name)}">Quit</button>`;
+  }
+  if(!p.protected){ const qb=act.querySelector(".quit"); if(qb){ qb.dataset.bundle=p.bundle?1:0; qb.dataset.pids=JSON.stringify(p.pids||[]); } }
+}
+function renderProcesses(){
+  const d=state.data; if(!d||!d.processes) return;
+  const list=[...d.processes].sort((a,b)=>(b[state.sort]||0)-(a[state.sort]||0));
+  const sortLabel={score:"impact",cpu:"CPU",mem_mb:"memory"}[state.sort];
+  $("#prSub").textContent="Ranked by "+sortLabel+" · "+list.length+" apps";
+  const root=$("#procList");
+  if(!list.length){ root.innerHTML=`<div class="empty">No processes</div>`; return; }
+  const em=root.querySelector(".empty"); if(em) em.remove();
+  const maxCpu=Math.max(...list.map(p=>p.cpu||0),1);
+  const maxMem=Math.max(...list.map(p=>p.mem_mb||0),1);
+  const maxScore=Math.max(...list.map(p=>p.score||0),1);
+  const existing=new Map();
+  root.querySelectorAll(".prow").forEach(el=>existing.set(el.dataset.key,el));
+  const oldPos=new Map(); existing.forEach((el,k)=>oldPos.set(k,el.getBoundingClientRect().top));
+  const frag=document.createDocumentFragment(), seen=new Set();
+  list.forEach((p,i)=>{
+    seen.add(p.name);
+    let el=existing.get(p.name);
+    if(!el){ el=document.createElement("div"); el.className="prow"; el.dataset.key=p.name; el.innerHTML=procRowStructure(p); }
+    updateProcRow(el,p,i,maxCpu,maxMem,maxScore);
+    frag.appendChild(el);
+  });
+  existing.forEach((el,k)=>{ if(!seen.has(k)) el.remove(); });
+  root.appendChild(frag);
+  /* FLIP: read new positions, then slide movers from where they were */
+  const moves=[];
+  root.querySelectorAll(".prow").forEach(el=>{
+    const oldTop=oldPos.get(el.dataset.key); if(oldTop==null) return;
+    const dy=oldTop-el.getBoundingClientRect().top;
+    if(Math.abs(dy)>=1) moves.push([el,dy]);
+  });
+  moves.forEach(([el,dy])=>{ el.style.transition="none"; el.style.transform="translateY("+dy+"px)"; });
+  if(moves.length){
+    void root.offsetWidth;
+    moves.forEach(([el])=>{ el.style.transition="transform .26s cubic-bezier(.4,0,.2,1), background .12s ease"; el.style.transform=""; });
+  }
+}
+
+/* ---------- actions ---------- */
+async function killProc(name,bundle,pids){
+  pids=pids||[];
+  if(!window.confirm(`Quit “${name}”?\n\nThis will force-quit ${pids.length>1?pids.length+" processes":"the process"} and may cause unsaved work to be lost.`)) return;
+  try{
+    const r=await fetch("/api/kill",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,bundle,pids})});
+    const res=await r.json();
+    if(!res.ok) alert(res.message||"Could not quit process.");
+  }catch(e){ alert("Could not quit process."); }
+  fetchStats();
+}
+
+/* low power toggle: click + keyboard (space/enter), with pending guard */
+const lpEl=$("#lpmSwitch");
+async function toggleLP(){
+  if(lpEl.getAttribute("aria-disabled")==="true") return;
+  const cur=lpEl.getAttribute("aria-checked")==="true";
+  const want=!cur;
+  if(!window.confirm(`Turn Low Power Mode ${want?"on":"off"}?\n\nmacOS may ask for your password.`)) return;
+  lpEl.dataset.pending="1";
+  lpEl.setAttribute("aria-checked", want?"true":"false");
+  lpEl.setAttribute("aria-disabled","true");
+  try{
+    const r=await fetch("/api/lowpower",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({on:want})});
+    const res=await r.json();
+    if(!res.ok){ alert(res.message||"Could not change Low Power Mode."); lpEl.setAttribute("aria-checked",cur?"true":"false"); }
+    else if(typeof res.on==="boolean") lpEl.setAttribute("aria-checked",res.on?"true":"false");
+  }catch(err){ alert("Could not change Low Power Mode."); lpEl.setAttribute("aria-checked",cur?"true":"false"); }
+  lpEl.removeAttribute("aria-disabled");
+  delete lpEl.dataset.pending;
+  fetchStats();
+}
+lpEl.addEventListener("click",toggleLP);
+lpEl.addEventListener("keydown",e=>{ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); toggleLP(); } });
+
+/* ---------- battery health ---------- */
+function renderHealth(){
+  const h=state.data.health||{}, b=state.data.battery||{};
+  const hp=h.health;
+  const set=(id,v)=>{const e=$(id); if(e) e.textContent=v;};
+  const hpEl=$("#healthPct"); if(hpEl) hpEl.innerHTML = hp!=null ? hp+'<small>%</small>' : "—";
+  const bar=$("#healthBar");
+  if(bar){ bar.style.width=(hp!=null?Math.min(100,hp):0)+"%";
+    bar.style.background = hp==null?"var(--track)":hp>=80?"var(--green)":hp>=60?"var(--amber)":"var(--red)"; }
+  const foot=$("#healthFoot"); if(foot) foot.textContent = hp!=null ? "of original capacity" : "Battery health unavailable";
+  const cond=h.condition||"—";
+  const cc=/normal|good/i.test(cond)?"normal":(cond==="—"?"discharging":"elevated");
+  const chip=$("#condChip"); if(chip) chip.innerHTML=`<span class="pill ${cc}">${esc(cond)}</span>`;
+  set("#hCycles", h.cycles!=null?h.cycles:"—");
+  set("#hCond", cond);
+  set("#hTemp", h.temp_c!=null?h.temp_c.toFixed(1)+" °C":"—");
+  set("#hCharge", b.percent!=null?b.percent+"%":"—");
+  set("#hSource", b.on_ac?"Power adapter":"Battery");
+  set("#hFull", h.full_mah!=null?h.full_mah.toLocaleString()+" mAh":"—");
+  set("#hDesign", h.design_mah!=null?h.design_mah.toLocaleString()+" mAh":"—");
+  const tint = hp==null?"rgba(120,120,128,.10)":hp>=80?"rgba(48,209,88,.16)":hp>=60?"rgba(255,159,10,.16)":"rgba(255,69,58,.16)";
+  const hc=document.getElementById("healthCard");
+  if(hc) hc.style.background="radial-gradient(115% 80% at 50% -12%,"+tint+",transparent 60%),linear-gradient(180deg,var(--card),var(--card-2))";
+}
+
+/* ---------- charge history (pmset log) ---------- */
+let hist={ range:"24h", data:null, loading:false };
+async function loadHistory(range){
+  if(range) hist.range=range;
+  hist.loading=true; renderHistory();
+  try{
+    const r=await fetch("/api/history?range="+hist.range,{cache:"no-store"});
+    hist.data=await r.json();
+  }catch(e){}
+  hist.loading=false; renderHistory();
+}
+function fmtWhen(sec){
+  const d=new Date(sec*1000), now=new Date();
+  const t=d.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
+  const same=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+  const y=new Date(now); y.setDate(now.getDate()-1);
+  if(same(d,now)) return "Today, "+t;
+  if(same(d,y)) return "Yesterday, "+t;
+  return d.toLocaleDateString([], {weekday:"short",month:"short",day:"numeric"})+", "+t;
+}
+function histTicks(h){
+  const out=[], start=h.start*1000, end=h.end*1000;
+  if(h.range==="24h"){
+    const d=new Date(start); d.setMinutes(0,0,0);
+    while(d.getHours()%3!==0 || d.getTime()<start) d.setHours(d.getHours()+1);
+    for(let t=d.getTime(); t<=end; t+=3*3600*1000){
+      const hr=new Date(t).getHours();
+      const lbl = hr===0?"12A" : hr===12?"12P" : hr<12?String(hr):String(hr-12);
+      out.push({ts:t/1000,label:lbl});
+    }
+  } else {
+    const d=new Date(start); d.setHours(0,0,0,0); d.setDate(d.getDate()+1);
+    for(let t=d.getTime(); t<=end; t+=2*86400*1000){
+      const dt=new Date(t);
+      out.push({ts:t/1000,label:(dt.getMonth()+1)+"/"+dt.getDate()});
+    }
+  }
+  return out;
+}
+/* Catmull-Rom → cubic-bezier smoothing for a gentle level line */
+function smoothPath(pts,yMin,yMax){
+  if(!pts.length) return "";
+  if(pts.length<3) return "M"+pts.map(p=>p.x.toFixed(2)+","+p.y.toFixed(2)).join(" L");
+  // clamping the control points keeps each cubic within its hull -> no over/undershoot past the axis
+  const cl=(yMin==null)?(y=>y):(y=>Math.max(yMin,Math.min(yMax,y)));
+  let d="M"+pts[0].x.toFixed(2)+","+pts[0].y.toFixed(2);
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||p2, t=0.5;
+    const c1x=p1.x+(p2.x-p0.x)*t/3, c1y=cl(p1.y+(p2.y-p0.y)*t/3);
+    const c2x=p2.x-(p3.x-p1.x)*t/3, c2y=cl(p2.y-(p3.y-p1.y)*t/3);
+    d+="C"+c1x.toFixed(2)+","+c1y.toFixed(2)+" "+c2x.toFixed(2)+","+c2y.toFixed(2)+" "+p2.x.toFixed(2)+","+p2.y.toFixed(2);
+  }
+  return d;
+}
+function boltGlyph(cx,cy){ const s=0.74;
+  return `<path d="M${(cx+1.6*s).toFixed(1)},${(cy-6*s).toFixed(1)} L${(cx-2.4*s).toFixed(1)},${(cy+s).toFixed(1)} L${(cx-0.2*s).toFixed(1)},${(cy+s).toFixed(1)} L${(cx-1.6*s).toFixed(1)},${(cy+6*s).toFixed(1)} L${(cx+2.6*s).toFixed(1)},${(cy-1.4*s).toFixed(1)} L${(cx+0.3*s).toFixed(1)},${(cy-1.4*s).toFixed(1)} Z" style="fill:#30d158"/>`;
+}
+function setStat(id,v){ const e=$(id); if(e) e.textContent=v; }
+function renderHistory(){
+  const svg=$("#histSvg"); if(!svg) return;
+  const h=hist.data, has=h&&h.bins&&h.bins.some(Boolean);
+  const title=$("#histTitle"), sub=$("#histSub");
+  if(!has){
+    svg.setAttribute("viewBox","0 0 760 300"); svg.style.height="300px";
+    svg.innerHTML=`<text x="380" y="150" text-anchor="middle" style="fill:var(--txt-3);font:600 14px -apple-system,system-ui">${hist.loading?"Loading…":"No charge history yet"}</text>`;
+    if(title) title.textContent="Charge history";
+    if(sub) sub.textContent=hist.loading?"Reading power log…":"Battery history appears as macOS logs power events.";
+    setStat("#hsNow","—"); setStat("#hsLow","—"); setStat("#hsChg","—");
+    return;
+  }
+  if(title) title.textContent = h.last_full ? "Last charged to 100%" : "Charge history";
+  if(sub) sub.textContent = h.last_full ? fmtWhen(h.last_full) : "No full charge in this period";
+
+  const G="#30d158";
+  // render at the host's real pixel width with a fixed height (1 unit = 1px),
+  // so the chart fills the width but never grows unbounded tall (no overlap).
+  const host=svg.parentElement;
+  const W=Math.max(360, Math.round((host&&host.clientWidth)||760));
+  const HT=300, padL=34, padR=18, padT=16, padB=28;
+  svg.setAttribute("viewBox","0 0 "+W+" "+HT);
+  svg.style.height=HT+"px";
+  const x0=padL, x1=W-padR, plotW=x1-x0;
+  const yT=padT, yB=HT-padB, plotH=yB-yT;
+  const vTop=yT+12;                               // headroom above 100% so the line/glow isn't clipped
+  const yFor=p=>yB-(Math.max(0,Math.min(100,p))/100)*(yB-vTop);
+  const bins=h.bins, n=bins.length, slot=plotW/n;
+  const cx=i=>x0+(i+0.5)*slot, ex=i=>x0+i*slot;
+  const lvl=b=>(b.v!=null?b.v:b.hi);
+
+  const railY=yB+5;
+  let s=`<defs>`+
+    `<linearGradient id="bhArea" x1="0" y1="0" x2="0" y2="1">`+
+    `<stop offset="0" stop-color="${G}" stop-opacity="0.40"/>`+
+    `<stop offset="0.55" stop-color="${G}" stop-opacity="0.13"/>`+
+    `<stop offset="1" stop-color="${G}" stop-opacity="0"/></linearGradient>`+
+    `<filter id="bhGlow" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="2.6" result="b"/>`+
+    `<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`+
+    `<clipPath id="bhClip"><rect x="${x0}" y="${yT-8}" width="${plotW}" height="${plotH+8}"/></clipPath></defs>`;
+  // inner surface
+  s+=`<rect x="${x0}" y="${yT}" width="${plotW}" height="${plotH}" rx="7" style="fill:var(--chart-surface)"/>`;
+  // gridlines + % labels
+  [0,50,100].forEach(p=>{ const y=yFor(p);
+    s+=`<line x1="${x0}" y1="${y.toFixed(1)}" x2="${x1}" y2="${y.toFixed(1)}" style="stroke:var(--line);stroke-width:1"/>`;
+    s+=`<text x="${(x0-7)}" y="${(y+3.5).toFixed(1)}" text-anchor="end" style="fill:var(--txt-3);font:500 11px -apple-system,system-ui">${p}</text>`;
+  });
+
+  {
+    // smooth gradient area (24h and 10d) — level traced from each bucket
+    let pts=[], first=-1, last=-1;
+    for(let i=0;i<n;i++){ const b=bins[i]; if(b){ if(first<0)first=i; last=i; pts.push({x:cx(i),y:yFor(lvl(b))}); } }
+    let line=pts.slice();
+    if(line.length){
+      const sE=ex(first), eE=ex(last+1);
+      if(line[0].x>sE) line.unshift({x:sE,y:line[0].y});
+      if(line[line.length-1].x<eE) line.push({x:eE,y:line[line.length-1].y});
+    }
+    const linePath=smoothPath(line,vTop,yB);
+    const areaPath = line.length ? linePath+`L${line[line.length-1].x.toFixed(2)},${yB.toFixed(2)}L${line[0].x.toFixed(2)},${yB.toFixed(2)}Z` : "";
+    // charging bands
+    s+=`<g clip-path="url(#bhClip)">`;
+    for(let i=0;i<n;){ if(bins[i]&&bins[i].ac){ let j=i; while(j<n&&bins[j]&&bins[j].ac) j++;
+        const bx=ex(i), bw=Math.max(ex(j)-ex(i),1.5);
+        s+=`<rect x="${bx.toFixed(2)}" y="${yT}" width="${bw.toFixed(2)}" height="${plotH}" style="fill:${G};fill-opacity:.085"/>`;
+        s+=`<line x1="${bx.toFixed(2)}" y1="${yT}" x2="${bx.toFixed(2)}" y2="${yB}" style="stroke:${G};stroke-opacity:.22;stroke-width:1"/>`; i=j;
+      } else i++; }
+    s+=`</g>`;
+    // time ticks + labels
+    histTicks(h).forEach(tk=>{ const x=x0+((tk.ts-h.start)/(h.end-h.start))*plotW;
+      if(x<x0-1||x>x1+1) return;
+      s+=`<line x1="${x.toFixed(1)}" y1="${yT}" x2="${x.toFixed(1)}" y2="${yB}" style="stroke:var(--line);stroke-width:1;stroke-dasharray:2 4;opacity:.6"/>`;
+      s+=`<text x="${x.toFixed(1)}" y="${HT-8}" text-anchor="middle" style="fill:var(--txt-3);font:500 11px -apple-system,system-ui">${tk.label}</text>`;
+    });
+    // area + glow line + crisp line + endpoint
+    if(areaPath){
+      s+=`<g clip-path="url(#bhClip)">`;
+      s+=`<path d="${areaPath}" style="fill:url(#bhArea)"/>`;
+      s+=`<path d="${linePath}" fill="none" style="stroke:${G};stroke-opacity:.5;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" filter="url(#bhGlow)"/>`;
+      s+=`<path d="${linePath}" fill="none" style="stroke:${G};stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round"/>`;
+      s+=`</g>`;
+      const eX=cx(last), eY=yFor(lvl(bins[last]));
+      s+=`<circle cx="${eX.toFixed(2)}" cy="${eY.toFixed(2)}" r="4.4" style="fill:${G};fill-opacity:.22"/>`;
+      s+=`<circle cx="${eX.toFixed(2)}" cy="${eY.toFixed(2)}" r="2.5" style="fill:${G};stroke:var(--card);stroke-width:0.8"/>`;
+    }
+    // charging rail + bolts
+    for(let i=0;i<n;){ if(bins[i]&&bins[i].ac){ let j=i; while(j<n&&bins[j]&&bins[j].ac) j++;
+        const bx=ex(i), bw=ex(j)-ex(i);
+        s+=`<rect x="${bx.toFixed(2)}" y="${railY.toFixed(1)}" width="${Math.max(bw,1.5).toFixed(2)}" height="2.4" rx="1.2" style="fill:${G};fill-opacity:.9"/>`;
+        if(bw>=14){ const c=Math.max(1,Math.floor(bw/200)); for(let k=0;k<c;k++) s+=boltGlyph(bx+bw*(k+0.5)/c, railY-5.5); }
+        i=j;
+      } else i++; }
+  }
+  svg.innerHTML=s;
+
+  // summary stats: now / lowest / charge sessions
+  let lows=Infinity, runs=0, inRun=false, nowV=null;
+  for(let i=0;i<n;i++){ const b=bins[i]; if(!b) continue;
+    const v=lvl(b); if(v<lows) lows=v; nowV=v;   // match the traced line
+    if(b.ac && !inRun){ runs++; inRun=true; } else if(!b.ac){ inRun=false; }
+  }
+  // "Now" prefers the live battery reading over the last logged bucket
+  const live=(state.data&&state.data.battery&&state.data.battery.percent!=null)?Math.round(state.data.battery.percent):null;
+  setStat("#hsNow", live!=null?live+"%":(nowV!=null?Math.round(nowV)+"%":"—"));
+  setStat("#hsLow", isFinite(lows)?Math.round(lows)+"%":"—");
+  setStat("#hsChg", String(runs));
+}
+/* keep the "Now" stat live between history reloads */
+function updateHistNow(){
+  if(!hist.data) return; const e=$("#hsNow"); if(!e) return;
+  const live=(state.data&&state.data.battery&&state.data.battery.percent!=null)?Math.round(state.data.battery.percent):null;
+  if(live!=null) e.textContent=live+"%";
+}
+$("#histSeg").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  $$("#histSeg button").forEach(x=>{const on=x===b; x.classList.toggle("on",on); x.setAttribute("aria-checked",on?"true":"false");});
+  loadHistory(b.dataset.range);
+});
+let _histRz; addEventListener("resize",()=>{ clearTimeout(_histRz); _histRz=setTimeout(()=>{ if(state.room==="health"&&hist.data) renderHistory(); },180); });
+
+/* (legacy energy sampler — no longer wired to the UI) */
+async function runEnergy(){
+  if(state.measuring) return; state.measuring=true;
+  const btn=$("#measureBtn"), top=$("#measureBtnTop"), ico=$("#scanIco"), ring=$("#scanRing"), inner=$("#measureBtnInner");
+  $("#energyErr").style.display="none";
+  btn.disabled=true; top.disabled=true;
+  inner.innerHTML='<svg class="spin" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.5"/></svg>Measuring…';
+  ico.innerHTML='<svg class="spin" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.5"/></svg>';
+  ring.style.strokeDashoffset=SCAN_C*0.25;
+  $("#scanTitle").textContent="Sampling power…";
+  $("#scanDesc").textContent="Reading energy counters from the system. This takes a moment.";
+  try{
+    const r=await fetch("/api/energy",{method:"POST"});
+    const d=await r.json();
+    if(!d.ok) throw new Error(d.message||"Measurement failed.");
+    ring.style.strokeDashoffset=0;
+    state.energy=d; renderEnergy();
+  }catch(e){
+    ring.style.strokeDashoffset=SCAN_C;
+    $("#scanTitle").textContent="Couldn’t measure";
+    $("#scanDesc").textContent="Energy data is unavailable right now.";
+    $("#energyErr").textContent=e.message||"Measurement failed."; $("#energyErr").style.display="block";
+  }
+  ico.innerHTML='<svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>';
+  inner.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M12 7v5l3 2"/></svg>Measure energy';
+  btn.disabled=false; top.disabled=false;
+  state.measuring=false;
+}
+function renderEnergy(){
+  const d=state.energy; if(!d) return;
+  $("#energyIdle").style.display="none";
+  $("#energyResults").style.display="block";
+  $("#measureBtnTop").style.display="inline-flex";
+  const sys=d.system||{};
+  const order=[["combined","Combined",true],["cpu","CPU"],["gpu","GPU"],["ane","Neural"],["package","Package"]];
+  const cards=order.filter(([k])=>sys[k]!=null).map(([k,label,feat])=>
+    `<div class="watt-card ${feat?'feature':''}"><div class="wl">${label}</div><div class="wv">${fmtW(sys[k])}<small>W</small></div></div>`
+  );
+  const grid=$("#wattGrid");
+  if(cards.length){
+    // size columns to the actual number of cards (avoids a lone wrapped card when 5 keys present)
+    grid.style.gridTemplateColumns="repeat("+cards.length+",1fr)";
+    grid.innerHTML=cards.join("");
+  }else{
+    grid.style.gridTemplateColumns="1fr";
+    grid.innerHTML=`<div class="empty">No system power data returned</div>`;
+  }
+
+  const tasks=(d.tasks||[]).slice().sort((a,b)=>(b.energy||0)-(a.energy||0)).slice(0,12);
+  const maxE=Math.max(...tasks.map(t=>t.energy||0),1);
+  $("#energyTasks").innerHTML=tasks.map((t,i)=>{
+    const w=Math.max(3,Math.round((t.energy||0)/maxE*100));
+    return `<div class="erow">
+      <span class="erank">${i+1}</span>
+      <span class="ename">${esc(t.name)}${t.pid!=null?` <span class="epid">pid ${esc(t.pid)}</span>`:""}</span>
+      <span class="ebar"><i style="width:${w}%"></i></span>
+      <span class="eval">${(Number(t.energy)||0).toFixed(1)}</span>
+    </div>`;
+  }).join("")||`<div class="empty">No task energy data</div>`;
+  $("#energyResults").classList.remove("fade-in"); void $("#energyResults").offsetWidth; $("#energyResults").classList.add("fade-in");
+}
+
+/* ---------- updated indicator (stale after 8s) ---------- */
+function updateAge(){
+  if(!state.lastTs) return;
+  const sec=Math.round((Date.now()-state.lastTs)/1000);
+  $("#updatedLabel").textContent=sec<=1?"updated just now":"updated "+sec+"s ago";
+  $("#liveDot").classList.toggle("stale",sec>8);
+  if(state.data&&state.data.ts){
+    const dt=new Date(state.data.ts*1000);
+    $("#qsTs").textContent=dt.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  }
+}
+
+/* ---------- boot ---------- */
+fetchStats();
+setInterval(fetchStats,5000);
+setInterval(updateAge,1000);
+</script>
+</body>
+</html>
