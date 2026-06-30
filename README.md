@@ -9,6 +9,18 @@ Battery Hog is a small, fast, **100% local** menu-bar + window app for Apple Sil
 
 No Electron, no dependencies: a tiny Swift/WebKit shell around a Python standard-library backend and an HTML/CSS dashboard.
 
+## Download
+
+**[⬇︎ Download the latest .dmg →](https://github.com/luke-fairbanks/BatteryHog/releases/latest)** — open it and drag **Battery Hog** to Applications.
+
+> **First launch:** this is a free, open-source build (not notarized by Apple), so macOS
+> Gatekeeper blocks it the first time. Try to open it once, then go to **System Settings →
+> Privacy & Security**, find the *"Battery Hog was blocked"* message, and click **Open
+> Anyway**. After that it launches normally. (Prefer to build it yourself? See
+> [Install](#install).)
+
+Requires macOS 11+ on Apple Silicon.
+
 ## Features
 
 - **Overview** — battery ring (state-colored), **live power draw in watts**, memory-pressure gauge, top energy users with real app icons, and a Low Power Mode toggle.
