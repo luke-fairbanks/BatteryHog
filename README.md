@@ -33,6 +33,8 @@ Requires macOS 11+ on Apple Silicon.
 
 <p align="center"><img src="docs/battery.png" width="760" alt="Charge history"></p>
 
+<p align="center"><img src="docs/processes.png" width="760" alt="Processes ranked by energy impact"></p>
+
 ## Install
 
 Requires macOS on Apple Silicon and the Xcode command-line tools (`xcode-select --install`).
