@@ -11,13 +11,7 @@ No Electron, no dependencies: a tiny Swift/WebKit shell around a Python standard
 
 ## Download
 
-**[⬇︎ Download the latest .dmg →](https://github.com/luke-fairbanks/BatteryHog/releases/latest)** — open it and drag **Battery Hog** to Applications.
-
-> **First launch:** this is a free, open-source build (not notarized by Apple), so macOS
-> Gatekeeper blocks it the first time. Try to open it once, then go to **System Settings →
-> Privacy & Security**, find the *"Battery Hog was blocked"* message, and click **Open
-> Anyway**. After that it launches normally. (Prefer to build it yourself? See
-> [Install](#install).)
+**[⬇︎ Download the latest .dmg →](https://github.com/luke-fairbanks/BatteryHog/releases/latest)** — open it and drag **Battery Hog** to Applications. Builds are signed and notarized, so it opens like any other app. (Prefer to build it yourself? See [Install](#install).)
 
 Requires macOS 11+ on Apple Silicon.
 
