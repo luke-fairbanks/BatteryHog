@@ -13,6 +13,12 @@ No Electron, no dependencies: a tiny Swift/WebKit shell around a Python standard
 
 **[⬇︎ Download the latest .dmg →](https://github.com/luke-fairbanks/BatteryHog/releases/latest)** — open it and drag **Battery Hog** to Applications. Builds are signed and notarized, so it opens like any other app. (Prefer to build it yourself? See [Install](#install).)
 
+Or with Homebrew:
+
+```bash
+brew install --cask luke-fairbanks/tap/battery-hog
+```
+
 Requires macOS 11+ on Apple Silicon.
 
 ## Features
