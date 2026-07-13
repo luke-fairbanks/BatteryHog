@@ -96,7 +96,7 @@ This outputs `dist/BatteryHog-<version>.dmg`, stapled and ready to share. Attach
 GitHub Release:
 
 ```bash
-gh release create v1.2 dist/BatteryHog-1.2.dmg --title "Battery Hog 1.2"
+gh release create v1.3 dist/BatteryHog-1.3.dmg --title "Battery Hog 1.3"
 ```
 
 > The app uses no third-party libraries, so it needs no special hardened-runtime
