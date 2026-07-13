@@ -64,10 +64,6 @@ if [ "${SKIP_DMG:-0}" = "1" ]; then
 fi
 
 echo "==> Build DMG"
-STAGE="$DIST/dmg"; mkdir -p "$STAGE"
-cp -R "$APP" "$STAGE/"
-ln -s /Applications "$STAGE/Applications"
-hdiutil create -volname "$APP_NAME" -srcfolder "$STAGE" -ov -format UDZO "$DMG" >/dev/null
-rm -rf "$STAGE"
+"$ROOT/src/build_dmg.sh" "$APP" "$DMG" "Battery Hog Installer"
 
 echo "==> Done: $DMG"

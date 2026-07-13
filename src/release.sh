@@ -80,12 +80,8 @@ codesign --force --options runtime --timestamp --sign "$SIGN_ID" "$APP"
 codesign --verify --strict --verbose=2 "$APP"
 
 echo "==> Build DMG"
-STAGE="$DIST/dmg"; mkdir -p "$STAGE"
-cp -R "$APP" "$STAGE/"
-ln -s /Applications "$STAGE/Applications"
-hdiutil create -volname "Battery Hog" -srcfolder "$STAGE" -ov -format UDZO "$DMG" >/dev/null
+"$ROOT/src/build_dmg.sh" "$APP" "$DMG" "Battery Hog Installer"
 codesign --force --timestamp --sign "$SIGN_ID" "$DMG"
-rm -rf "$STAGE"
 
 if [ "$SKIP_NOTARIZE" = "1" ]; then
     echo "==> SKIP_NOTARIZE set — signed app + DMG are in $DIST (not notarized)."
