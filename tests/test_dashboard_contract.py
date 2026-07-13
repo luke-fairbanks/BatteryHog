@@ -272,6 +272,8 @@ class DashboardContractTests(unittest.TestCase):
         self.assertIn("window.webkit.messageHandlers.updates", self.script)
         self.assertIn("update-direct-icon", self.html)
         self.assertIn("update-brew-icon", self.html)
+        self.assertIn("@keyframes update-pulse", self.css)
+        self.assertNotIn('M20 11a8 8 0 1 0 2 5.3', self.html)
         self.assertRegex(
             self.script,
             r'classList\.toggle\(\s*["\']homebrew["\']\s*,\s*homebrew\s*\)',

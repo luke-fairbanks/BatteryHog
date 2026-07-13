@@ -279,7 +279,8 @@
   .update-mark .update-brew-icon{display:none}
   .update-mark.homebrew .update-direct-icon{display:none}
   .update-mark.homebrew .update-brew-icon{display:block}
-  .update-mark.checking .update-direct-icon{animation:spin .9s linear infinite}
+  .update-mark.checking .update-direct-icon{animation:update-pulse 1.05s ease-in-out infinite}
+  @keyframes update-pulse{0%,100%{opacity:.45;transform:scale(.9)}50%{opacity:1;transform:scale(1)}}
   .update-title{font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--txt)}
   .update-status{font-size:11.5px;line-height:1.45;color:var(--txt-3);margin-top:3px;max-width:570px}
   .update-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px}
@@ -922,7 +923,7 @@
     .ins-grid{grid-template-columns:repeat(2,1fr)}
   }
   @media (prefers-reduced-motion:reduce){
-    .page.active,.nav-item,.prow,.current-energy:before,.loading-spinner:after,.skel{animation:none!important;transition:none!important}
+    .page.active,.nav-item,.prow,.current-energy:before,.loading-spinner:after,.skel,.update-direct-icon{animation:none!important;transition:none!important}
     .side-foot .dot{box-shadow:none}
   }
 </style>
@@ -1335,7 +1336,7 @@
           </div>
           <div class="update-overview">
             <div class="update-mark" aria-hidden="true">
-              <svg class="update-direct-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0 2 5.3"/><path d="M20 4v7h-7"/></svg>
+              <svg class="update-direct-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.91 5.81a2 2 0 0 1-1.28 1.28L3 12l5.81 1.91a2 2 0 0 1 1.28 1.28L12 21l1.91-5.81a2 2 0 0 1 1.28-1.28L21 12l-5.81-1.91a2 2 0 0 1-1.28-1.28L12 3Z"/><path d="M5 3v4M3 5h4M19 17v4M17 19h4"/></svg>
               <svg class="update-brew-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m7.5 9 3 3-3 3"/><path d="M13 15h3.5"/></svg>
             </div>
             <div>
