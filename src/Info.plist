@@ -9,9 +9,9 @@
     <key>CFBundleIdentifier</key>
     <string>com.lukefairbanks.batteryhog</string>
     <key>CFBundleVersion</key>
-    <string>1.3</string>
+    <string>1.3.1</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.3</string>
+    <string>1.3.1</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleExecutable</key>

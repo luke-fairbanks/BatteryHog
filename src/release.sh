@@ -13,14 +13,14 @@
 # ── Usage ──
 #   SIGN_ID="Developer ID Application: Your Name (TEAMID)" bash src/release.sh
 # Optional env:
-#   VERSION=1.3                  bundle/dmg version (default 1.3)
+#   VERSION=1.3.1                bundle/dmg version (default 1.3.1)
 #   NOTARY_PROFILE=BatteryHog-notary
 #   SKIP_NOTARIZE=1              build + sign + dmg only (dry run, no notarization)
 
 set -e
 cd "$(dirname "$0")"
 ROOT="$(cd .. && pwd)"
-VERSION="${VERSION:-1.3}"
+VERSION="${VERSION:-1.3.1}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-BatteryHog-notary}"
 DIST="$ROOT/dist"
 APP="$DIST/Battery Hog.app"

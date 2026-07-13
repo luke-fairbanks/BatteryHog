@@ -8,7 +8,7 @@
 set -e
 cd "$(dirname "$0")"
 ROOT="$(cd .. && pwd)"
-VERSION="${VERSION:-1.3}"
+VERSION="${VERSION:-1.3.1}"
 APP_NAME="${APP_NAME:-Battery Hog}"
 BUNDLE_ID="${BUNDLE_ID:-com.lukefairbanks.batteryhog}"
 DIST="${DIST:-$ROOT/dist}"
