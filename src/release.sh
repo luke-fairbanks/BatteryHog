@@ -13,18 +13,19 @@
 # ── Usage ──
 #   SIGN_ID="Developer ID Application: Your Name (TEAMID)" bash src/release.sh
 # Optional env:
-#   VERSION=1.0                  bundle/dmg version (default 1.0)
+#   VERSION=1.2                  bundle/dmg version (default 1.2)
 #   NOTARY_PROFILE=BatteryHog-notary
 #   SKIP_NOTARIZE=1              build + sign + dmg only (dry run, no notarization)
 
 set -e
 cd "$(dirname "$0")"
 ROOT="$(cd .. && pwd)"
-VERSION="${VERSION:-1.0}"
+VERSION="${VERSION:-1.2}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-BatteryHog-notary}"
 DIST="$ROOT/dist"
 APP="$DIST/Battery Hog.app"
 DMG="$DIST/BatteryHog-$VERSION.dmg"
+SWIFT_TARGET="${SWIFT_TARGET:-arm64-apple-macosx11.0}"
 
 if [ -z "$SIGN_ID" ]; then
     echo "Set SIGN_ID to your Developer ID Application identity, e.g.:"
@@ -53,16 +54,23 @@ sips -z 256 256 icon_1024.png --out "$ICONSET/icon_256x256.png"    >/dev/null
 sips -z 512 512 icon_1024.png --out "$ICONSET/icon_256x256@2x.png" >/dev/null
 sips -z 512 512 icon_1024.png --out "$ICONSET/icon_512x512.png"    >/dev/null
 cp icon_1024.png "$ICONSET/icon_512x512@2x.png"
-iconutil -c icns "$ICONSET" -o "$C/Resources/AppIcon.icns"
+if ! iconutil -c icns "$ICONSET" -o "$C/Resources/AppIcon.icns"; then
+    echo "   iconutil rejected the iconset; using the built-in ICNS packer"
+    python3 make_icns.py "$ICONSET" "$C/Resources/AppIcon.icns"
+fi
 
 echo "==> Compile (Swift)"
-swiftc -O BatteryHogApp.swift -o "$C/MacOS/BatteryHog" -framework Cocoa -framework WebKit
+swiftc -O -target "$SWIFT_TARGET" BatteryHogApp.swift -o "$C/MacOS/BatteryHog" \
+    -framework Cocoa -framework WebKit -framework UserNotifications
 
 echo "==> Bundle"
 cp Info.plist "$C/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$C/Info.plist" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" "$C/Info.plist" 2>/dev/null || true
 cp "$ROOT/battery_hog.py" "$C/Resources/battery_hog.py"
+cp "$ROOT/batteryhog_workloads.py" "$C/Resources/batteryhog_workloads.py"
+cp "$ROOT/batteryhog_gate.py" "$C/Resources/batteryhog_gate.py"
+chmod +x "$C/Resources/batteryhog_gate.py"
 cp "$ROOT/dashboard.html" "$C/Resources/dashboard.html"
 printf 'APPL????' > "$C/PkgInfo"
 

@@ -1,4 +1,5 @@
 import Cocoa
+import UserNotifications
 import WebKit
 
 // Native shell for Battery Hog:
@@ -62,7 +63,47 @@ final class IconSchemeHandler: NSObject, WKURLSchemeHandler {
     }
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKUIDelegate {
+private struct HeatWorkloadObservation {
+    let key: String
+    let label: String
+    let cpu: Double
+    let workers: Int
+    let workerNoun: String
+}
+
+private struct HeatStatsSample {
+    let date: Date
+    let processCPU: [String: Double]
+    let workloads: [HeatWorkloadObservation]
+}
+
+private struct HeatCandidate {
+    let key: String
+    let label: String
+    let averageCPU: Double
+    let workers: Int
+    let workerNoun: String?
+    let isWorkload: Bool
+}
+
+private struct HeatAggregate {
+    var label: String
+    var totalCPU: Double
+    var maxWorkers: Int
+    var workerNoun: String
+}
+
+final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKUIDelegate,
+                         UNUserNotificationCenterDelegate {
+    private let heatNotificationCategory = "BATTERY_HOG_HEAT"
+    private let heatOpenAction = "BATTERY_HOG_HEAT_OPEN_WORKLOADS"
+    private let heatSnoozeAction = "BATTERY_HOG_HEAT_SNOOZE"
+    private let heatPermissionRequestedKey = "HeatWatchNotificationPermissionRequested"
+    private let heatLastAlertKey = "HeatWatchLastAlertAt"
+    private let heatSnoozeUntilKey = "HeatWatchSnoozeUntil"
+    private let heatHistoryWindow: TimeInterval = 90
+    private let heatCooldown: TimeInterval = 15 * 60
+
     let iconHandler = IconSchemeHandler()
     var window: NSWindow!
     var webView: WKWebView!
@@ -71,17 +112,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     var statusItem: NSStatusItem!
     var pollTimer: Timer?
     var lastLowPower: Bool? = nil
+    private var statsPollInFlight = false
+    private var heatHistory: [HeatStatsSample] = []
+    private var currentThermalState: ProcessInfo.ThermalState = .nominal
+    private var heatElevatedAt: Date?
+    private var heatEpisodeArmed = true
+    private var heatEvaluationWorkItem: DispatchWorkItem?
+    private var heatAlertsEnabled = false
 
     func applicationDidFinishLaunching(_ note: Notification) {
+        // Read the initial value before subscribing, as recommended for
+        // ProcessInfo state-change notifications: the notification is only a
+        // signal to fetch the new value, not a container for the state itself.
+        let initialThermalState = ProcessInfo.processInfo.thermalState
+        currentThermalState = debugThermalStateOverride() ?? initialThermalState
+        configureHeatNotifications()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(thermalStateDidChange(_:)),
+            name: ProcessInfo.thermalStateDidChangeNotification,
+            object: nil
+        )
+        applyThermalState(currentThermalState, at: Date())
+
         port = findFreePort()
         startServer()
         buildStatusItem()
         buildWindow()
         waitForServer(attempt: 0)
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 7.0, repeats: true) { [weak self] _ in
-            self?.pollStats()
-        }
-        pollStats()
         NSApp.activate(ignoringOtherApps: true)
     }
 
@@ -102,6 +160,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         var env = ProcessInfo.processInfo.environment
         let base = "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin"
         env["PATH"] = base + ":" + (env["PATH"] ?? "")
+        // Preview builds use a separate bundle identifier and isolated settings,
+        // so reviewing a candidate cannot alter the installed release's state.
+        if Bundle.main.bundleIdentifier?.hasSuffix(".preview") == true {
+            let support = FileManager.default.urls(for: .applicationSupportDirectory,
+                                                   in: .userDomainMask).first
+            let previewData = support?.appendingPathComponent("BatteryHogPreview").path
+                ?? NSTemporaryDirectory() + "BatteryHogPreview"
+            env["BATTERY_HOG_DATA_DIR"] = previewData
+            env["BATTERY_HOG_PREVIEW"] = "1"
+        }
         p.environment = env
         do { try p.run(); py = p } catch { NSLog("Battery Hog: backend failed: \(error)") }
     }
@@ -168,6 +236,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             DispatchQueue.main.async {
                 if let h = resp as? HTTPURLResponse, h.statusCode == 200 {
                     self.webView.load(URLRequest(url: url))
+                    self.startStatsPolling()
                 } else if attempt < 60 {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                         self.waitForServer(attempt: attempt + 1)
@@ -200,21 +269,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         statusItem.menu = menu
     }
 
+    private func startStatsPolling() {
+        if pollTimer == nil {
+            pollTimer = Timer.scheduledTimer(withTimeInterval: 7.0, repeats: true) { [weak self] _ in
+                self?.pollStats()
+            }
+        }
+        pollStats()
+    }
+
     func pollStats() {
-        guard let url = URL(string: "http://127.0.0.1:\(port)/api/stats") else { return }
+        guard !statsPollInFlight else { return }
+        statsPollInFlight = true
+        guard let url = URL(string: "http://127.0.0.1:\(port)/api/stats") else {
+            statsPollInFlight = false
+            return
+        }
         URLSession.shared.dataTask(with: url) { data, _, _ in
-            guard let data = data,
-                  let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-            else { return }
-            DispatchQueue.main.async { self.applyStats(obj) }
+            let obj = data.flatMap {
+                try? JSONSerialization.jsonObject(with: $0) as? [String: Any]
+            }
+            DispatchQueue.main.async {
+                self.statsPollInFlight = false
+                if let obj = obj { self.applyStats(obj) }
+            }
         }.resume()
     }
 
     func applyStats(_ obj: [String: Any]) {
         let procs = obj["processes"] as? [[String: Any]] ?? []
+        let workloads = obj["workloads"] as? [[String: Any]] ?? []
         lastLowPower = obj["lowpower"] as? Bool
         let battery = obj["battery"] as? [String: Any] ?? [:]
         let power = obj["power"] as? [String: Any] ?? [:]
+        let dev = obj["dev_summary"] as? [String: Any] ?? [:]
         let pct = battery["percent"] as? Int
         let watts = power["watts"] as? Double
         let direction = power["direction"] as? String ?? ""
@@ -223,6 +311,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
 
         // status-bar title: user-configurable via Settings ▸ Menu bar
         let settings = obj["settings"] as? [String: Any] ?? [:]
+        let heat = settings["heat"] as? [String: Any] ?? [:]
+        recordHeatStats(processes: procs, workloads: workloads, at: Date())
+        updateHeatAlertsEnabled((heat["enabled"] as? Bool) ?? false)
+        evaluateHeatEpisode(at: Date())
         let mb = settings["menubar"] as? [String: Any] ?? [:]
         func mbOn(_ k: String, _ def: Bool) -> Bool { (mb[k] as? Bool) ?? def }
         var titleParts: [String] = []
@@ -238,6 +330,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             if short.count > 12 { short = String(short.prefix(11)) + "…" }
             let cpu = Int((top["cpu"] as? Double) ?? 0)
             titleParts.append("\(short) \(cpu)%")
+        }
+        if mbOn("dev", false) {
+            let projects = dev["projects"] as? Int ?? 0
+            let heavy = dev["heavy_workers"] as? Int ?? 0
+            if projects > 0 { titleParts.append("\(heavy) jobs · \(projects) dev") }
         }
         statusItem.button?.title = titleParts.isEmpty ? "" : " " + titleParts.joined(separator: " · ")
 
@@ -283,6 +380,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             menu.addItem(item)
         }
 
+        let projects = dev["projects"] as? Int ?? 0
+        if projects > 0 {
+            menu.addItem(.separator())
+            let workers = dev["active_workers"] as? Int ?? 0
+            let heavy = dev["heavy_workers"] as? Int ?? 0
+            let item = NSMenuItem(title: "Development   \(projects) projects · \(workers) active · \(heavy) heavy",
+                                  action: #selector(showWorkloads(_:)), keyEquivalent: "")
+            item.target = self
+            menu.addItem(item)
+        }
+
         menu.addItem(.separator())
         let lpm = NSMenuItem(title: "Low Power Mode", action: #selector(toggleLPM(_:)), keyEquivalent: "")
         lpm.target = self
@@ -324,6 +432,353 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    @objc func showWorkloads(_ sender: Any?) {
+        showDashboard(sender)
+        webView.evaluateJavaScript("go('workloads')", completionHandler: nil)
+    }
+
+    // MARK: Heat Watch
+
+    private func configureHeatNotifications() {
+        let center = UNUserNotificationCenter.current()
+        center.delegate = self
+        let open = UNNotificationAction(identifier: heatOpenAction,
+                                        title: "Open Workloads", options: [.foreground])
+        let snooze = UNNotificationAction(identifier: heatSnoozeAction,
+                                          title: "Snooze 1 hour", options: [])
+        let category = UNNotificationCategory(identifier: heatNotificationCategory,
+                                              actions: [open, snooze],
+                                              intentIdentifiers: [], options: [])
+        center.setNotificationCategories([category])
+    }
+
+    private var isPreviewBuild: Bool {
+        Bundle.main.bundleIdentifier?.hasSuffix(".preview") == true
+    }
+
+    /// Preview-only deterministic hooks for testing without heating a Mac:
+    ///   BATTERY_HOG_DEBUG_THERMAL_STATE=fair|serious|critical
+    ///   BATTERY_HOG_DEBUG_HEAT_ENABLED=1
+    ///   BATTERY_HOG_DEBUG_HEAT_DELAY_SECONDS=0
+    ///   BATTERY_HOG_DEBUG_HEAT_DRY_RUN=1 (logs the notification, does not post it)
+    /// They are deliberately ignored by release-bundle identifiers.
+    private func debugEnvironment(_ key: String) -> String? {
+        guard isPreviewBuild else { return nil }
+        return ProcessInfo.processInfo.environment[key]
+    }
+
+    private func debugThermalStateOverride() -> ProcessInfo.ThermalState? {
+        switch debugEnvironment("BATTERY_HOG_DEBUG_THERMAL_STATE")?.lowercased() {
+        case "nominal": return .nominal
+        case "fair": return .fair
+        case "serious": return .serious
+        case "critical": return .critical
+        default: return nil
+        }
+    }
+
+    private var heatSustainDelay: TimeInterval {
+        guard let raw = debugEnvironment("BATTERY_HOG_DEBUG_HEAT_DELAY_SECONDS"),
+              let delay = Double(raw) else { return 10 }
+        return max(0, delay)
+    }
+
+    private var heatDebugDryRun: Bool {
+        debugEnvironment("BATTERY_HOG_DEBUG_HEAT_DRY_RUN") == "1"
+    }
+
+    private func updateHeatAlertsEnabled(_ settingEnabled: Bool) {
+        let enabled = settingEnabled || debugEnvironment("BATTERY_HOG_DEBUG_HEAT_ENABLED") == "1"
+        let becameEnabled = enabled && !heatAlertsEnabled
+        heatAlertsEnabled = enabled
+        if becameEnabled {
+            requestHeatNotificationPermissionIfNeeded()
+            scheduleHeatEvaluationIfNeeded(at: Date())
+            evaluateHeatEpisode(at: Date())
+        }
+    }
+
+    private func requestHeatNotificationPermissionIfNeeded() {
+        // A dry run intentionally avoids a system prompt; all normal enabled
+        // Heat Watch sessions request permission exactly once per bundle.
+        if heatDebugDryRun { return }
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: heatPermissionRequestedKey) else { return }
+        defaults.set(true, forKey: heatPermissionRequestedKey)
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) {
+            granted, error in
+            if let error = error {
+                NSLog("Battery Hog Heat Watch: notification permission failed: \(error)")
+            } else if !granted {
+                NSLog("Battery Hog Heat Watch: notification permission was not granted")
+            }
+        }
+    }
+
+    @objc private func thermalStateDidChange(_ notification: Notification) {
+        let state = debugThermalStateOverride() ?? ProcessInfo.processInfo.thermalState
+        DispatchQueue.main.async { [weak self] in
+            self?.applyThermalState(state, at: Date())
+        }
+    }
+
+    private func applyThermalState(_ state: ProcessInfo.ThermalState, at now: Date) {
+        currentThermalState = state
+        if state == .nominal {
+            heatElevatedAt = nil
+            heatEpisodeArmed = true
+            heatEvaluationWorkItem?.cancel()
+            heatEvaluationWorkItem = nil
+            return
+        }
+        if heatElevatedAt == nil {
+            heatElevatedAt = now
+        }
+        scheduleHeatEvaluationIfNeeded(at: now)
+    }
+
+    private func scheduleHeatEvaluationIfNeeded(at now: Date) {
+        guard currentThermalState != .nominal,
+              heatEpisodeArmed,
+              let elevatedAt = heatElevatedAt else { return }
+        heatEvaluationWorkItem?.cancel()
+        let remaining = max(0, heatSustainDelay - now.timeIntervalSince(elevatedAt))
+        let item = DispatchWorkItem { [weak self] in
+            self?.evaluateHeatEpisode(at: Date())
+        }
+        heatEvaluationWorkItem = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + remaining, execute: item)
+    }
+
+    private func evaluateHeatEpisode(at now: Date) {
+        guard heatAlertsEnabled,
+              currentThermalState != .nominal,
+              heatEpisodeArmed,
+              let elevatedAt = heatElevatedAt else { return }
+        let elapsed = now.timeIntervalSince(elevatedAt)
+        guard elapsed >= heatSustainDelay else {
+            scheduleHeatEvaluationIfNeeded(at: now)
+            return
+        }
+
+        // One evaluation per elevated-temperature episode. Cool/nominal is the
+        // only condition that re-arms it, including when cooldown or snooze wins.
+        heatEpisodeArmed = false
+        heatEvaluationWorkItem?.cancel()
+        heatEvaluationWorkItem = nil
+
+        let defaults = UserDefaults.standard
+        let snoozeUntil = defaults.double(forKey: heatSnoozeUntilKey)
+        if snoozeUntil > now.timeIntervalSince1970 { return }
+        let lastAlert = defaults.double(forKey: heatLastAlertKey)
+        if lastAlert > 0 && now.timeIntervalSince1970 - lastAlert < heatCooldown { return }
+
+        let body = heatNotificationBody(at: now)
+        defaults.set(now.timeIntervalSince1970, forKey: heatLastAlertKey)
+        postHeatNotification(body: body, at: now)
+    }
+
+    private func recordHeatStats(processes: [[String: Any]], workloads: [[String: Any]], at now: Date) {
+        var processCPU: [String: Double] = [:]
+        for process in processes {
+            // System/protected helpers are not actionable explanations and can
+            // include Battery Hog's own short-lived sampling commands.
+            if (process["protected"] as? Bool) == true { continue }
+            guard let name = process["name"] as? String, !name.isEmpty else { continue }
+            let cpu = (process["cpu"] as? NSNumber)?.doubleValue ?? 0
+            if cpu > 0 { processCPU[name, default: 0] += cpu }
+        }
+
+        var workloadObservations: [HeatWorkloadObservation] = []
+        for (index, workload) in workloads.enumerated() {
+            let cpu = (workload["cpu"] as? NSNumber)?.doubleValue ?? 0
+            guard cpu > 0 else { continue }
+            let project = (workload["name"] as? String) ?? "Development"
+            let key = (workload["id"] as? String) ?? "workload-\(index)-\(project)"
+            let tools = workload["tools"] as? [[String: Any]] ?? []
+            let families = workload["families"] as? [String] ?? []
+            let agents = workload["agents"] as? [String] ?? []
+            let tool = tools.first?["name"] as? String
+            let label = heatWorkloadLabel(project: project, agent: agents.first,
+                                          tool: tool, families: families)
+            let activeWorkers = (workload["active_workers"] as? NSNumber)?.intValue ?? 0
+            let workers = activeWorkers > 0
+                ? activeWorkers
+                : ((workload["workers"] as? NSNumber)?.intValue ?? 0)
+            let status = (workload["status"] as? String) ?? "Active"
+            workloadObservations.append(HeatWorkloadObservation(
+                key: key, label: label, cpu: cpu, workers: workers,
+                workerNoun: heatWorkerNoun(for: status)
+            ))
+        }
+
+        heatHistory.append(HeatStatsSample(date: now, processCPU: processCPU,
+                                           workloads: workloadObservations))
+        let cutoff = now.addingTimeInterval(-heatHistoryWindow)
+        heatHistory.removeAll { $0.date < cutoff }
+    }
+
+    private func heatWorkloadLabel(project: String, agent: String?, tool: String?,
+                                   families: [String]) -> String {
+        // When an agent/editor is the ancestor of the workers, it is the most
+        // recognizable and actionable attribution for the person using the Mac.
+        if let agent = agent, !agent.isEmpty { return agent }
+        if let tool = tool, !tool.isEmpty {
+            let genericTools = ["Node", "Node task", "Java", "Native build", "Development"]
+            if !genericTools.contains(tool) { return tool }
+        }
+        if let family = families.first, !family.isEmpty {
+            return "\(project) \(family) workload"
+        }
+        return "\(project) development workload"
+    }
+
+    private func normalizedHeatContributorName(_ label: String) -> String {
+        let compact = label.lowercased().filter { $0.isLetter || $0.isNumber }
+        if compact.contains("visualstudiocode") || compact.contains("vscode") ||
+            compact.contains("codehelper") { return "vscode" }
+        if compact.contains("codex") { return "codex" }
+        if compact.contains("cursor") { return "cursor" }
+        if compact.contains("claude") { return "claude" }
+        if compact.contains("xcode") { return "xcode" }
+        return compact
+    }
+
+    private func heatWorkerNoun(for status: String) -> String {
+        switch status.lowercased() {
+        case "compiling": return "compiler workers"
+        case "building": return "build workers"
+        case "testing": return "test workers"
+        case "serving": return "dev-server workers"
+        case "scanning": return "scan workers"
+        case "installing": return "install workers"
+        default: return "development workers"
+        }
+    }
+
+    private func heatCandidates(at now: Date) -> [HeatCandidate] {
+        let cutoff = now.addingTimeInterval(-heatHistoryWindow)
+        let samples = heatHistory.filter { $0.date >= cutoff }
+        guard !samples.isEmpty else { return [] }
+
+        var processTotals: [String: Double] = [:]
+        var workloadTotals: [String: HeatAggregate] = [:]
+        for sample in samples {
+            for (name, cpu) in sample.processCPU {
+                processTotals[name, default: 0] += cpu
+            }
+            for workload in sample.workloads {
+                var aggregate = workloadTotals[workload.key] ?? HeatAggregate(
+                    label: workload.label, totalCPU: 0, maxWorkers: 0,
+                    workerNoun: workload.workerNoun
+                )
+                aggregate.label = workload.label
+                aggregate.totalCPU += workload.cpu
+                aggregate.maxWorkers = max(aggregate.maxWorkers, workload.workers)
+                aggregate.workerNoun = workload.workerNoun
+                workloadTotals[workload.key] = aggregate
+            }
+        }
+
+        let divisor = Double(samples.count)
+        var candidates = workloadTotals.map { key, value in
+            HeatCandidate(key: "workload:\(key)", label: value.label,
+                          averageCPU: value.totalCPU / divisor,
+                          workers: value.maxWorkers, workerNoun: value.workerNoun,
+                          isWorkload: true)
+        }
+
+        // Workload discovery already includes these executables. Avoid counting
+        // a compiler once as a project workload and again as a raw process.
+        let devExecutables = Set([
+            "swift", "swiftc", "swift-frontend", "xcodebuild", "rustc", "cargo",
+            "sccache", "gradle", "gradlew", "java", "kotlinc", "go", "pytest",
+            "jest", "vitest", "playwright", "cypress", "tsc", "esbuild", "webpack",
+            "rollup", "turbo", "npm", "pnpm", "yarn", "bun", "npx", "node",
+            "make", "cmake", "ninja"
+        ])
+        let hasWorkloads = !workloadTotals.isEmpty
+        for (name, total) in processTotals {
+            let normalized = name.lowercased()
+            if normalized.contains("battery_hog") || normalized == "battery hog" { continue }
+            if hasWorkloads && devExecutables.contains(normalized) { continue }
+            candidates.append(HeatCandidate(key: "process:\(name)", label: name,
+                                            averageCPU: total / divisor, workers: 0,
+                                            workerNoun: nil, isWorkload: false))
+        }
+        return candidates.filter { $0.averageCPU >= 1 }
+            .sorted { left, right in
+                if left.averageCPU == right.averageCPU { return left.isWorkload && !right.isWorkload }
+                return left.averageCPU > right.averageCPU
+            }
+    }
+
+    private func heatNotificationBody(at now: Date) -> String {
+        let candidates = heatCandidates(at: now)
+        guard let top = candidates.first else {
+            return "Thermal pressure has stayed elevated. Open Workloads to see what is active."
+        }
+
+        let topCPU = Int(top.averageCPU.rounded())
+        var body = "Likely \(top.label)"
+        if let workerNoun = top.workerNoun, top.workers > 0 {
+            body += ": \(top.workers) \(workerNoun) averaging \(topCPU)% CPU."
+        } else {
+            body += ", averaging \(topCPU)% CPU."
+        }
+        let normalizedTop = normalizedHeatContributorName(top.label)
+        if let second = candidates.dropFirst().first(where: {
+            $0.averageCPU >= 15 && $0.averageCPU >= top.averageCPU * 0.15
+                && normalizedHeatContributorName($0.label) != normalizedTop
+        }) {
+            body += " \(second.label) is also contributing at \(Int(second.averageCPU.rounded()))% CPU."
+        }
+        return body
+    }
+
+    private func postHeatNotification(body: String, at now: Date) {
+        if heatDebugDryRun {
+            NSLog("%@", "Battery Hog Heat Watch dry run — Your Mac is heating up — \(body)")
+            return
+        }
+        let content = UNMutableNotificationContent()
+        content.title = "Your Mac is heating up"
+        content.body = body
+        content.sound = .default
+        content.categoryIdentifier = heatNotificationCategory
+        let request = UNNotificationRequest(
+            identifier: "battery-hog-heat-\(Int(now.timeIntervalSince1970))",
+            content: content, trigger: nil
+        )
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                NSLog("Battery Hog Heat Watch: notification failed: \(error)")
+            }
+        }
+    }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler:
+                                @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound])
+    }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        switch response.actionIdentifier {
+        case heatOpenAction, UNNotificationDefaultActionIdentifier:
+            DispatchQueue.main.async { [weak self] in self?.showWorkloads(nil) }
+        case heatSnoozeAction:
+            UserDefaults.standard.set(Date().addingTimeInterval(60 * 60).timeIntervalSince1970,
+                                      forKey: heatSnoozeUntilKey)
+        default:
+            break
+        }
+        completionHandler()
+    }
+
     func backendPOST(_ path: String, _ body: [String: Any]) {
         guard let url = URL(string: "http://127.0.0.1:\(port)\(path)") else { return }
         var req = URLRequest(url: url)
@@ -345,6 +800,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     }
 
     func applicationWillTerminate(_ note: Notification) {
+        NotificationCenter.default.removeObserver(self,
+                                                  name: ProcessInfo.thermalStateDidChangeNotification,
+                                                  object: nil)
+        heatEvaluationWorkItem?.cancel()
         py?.terminate()
     }
 

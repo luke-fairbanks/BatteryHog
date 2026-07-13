@@ -25,15 +25,33 @@ Requires macOS 11+ on Apple Silicon.
 
 - **Overview** — battery ring (state-colored), **live power draw in watts**, memory-pressure gauge, top energy users with real app icons, and a Low Power Mode toggle.
 - **Processes** — sortable list (Impact / CPU / Memory) of apps grouped by process, with a Quit button. System processes are protected; the header stays pinned while rows scroll.
+- **Workloads** — groups short-lived Node, Rust, Gradle/Kotlin, CocoaPods, test, scan, and compiler processes by project, including the coding agent that launched them.
 - **Battery** — a **charge-history chart** (Last 24 Hours / Last 10 Days, built from the system power log) plus maximum capacity, condition, cycle count, and temperature.
 - **Insights** — answers *"why does my battery drain so fast?"*: typical drain rate (%/hr), projected runtime per charge, time on battery, charge sessions, and overnight wake-ups.
-- **Smart suggestions** — contextual, actionable tips (restart after long uptime, free RAM under pressure, plug in when low, unplug at 100%, …). Mute tips for apps you can't quit.
-- **Opt-in alerts** — native notifications for low battery, full charge, and runaway-CPU apps.
+- **Sleep blockers** — identifies apps holding long-running idle-sleep assertions and flags overly long battery display timeouts.
+- **Battery-aware Agent Mode** — an opt-in command gate that queues heavyweight agent builds on battery, caps supported compiler workers, and automatically becomes unrestricted on AC power.
+- **Smart suggestions** — contextual, actionable tips (coordinate concurrent builds, release stuck sleep assertions, restart after long uptime, free RAM under pressure, plug in when low, …). Mute tips for apps you can't quit.
+- **Opt-in alerts** — native notifications for low battery, full charge, runaway-CPU apps, and sustained macOS thermal pressure with likely workload attribution.
 - **Configurable menu bar** — choose what the status item shows: battery %, watts, time remaining, and/or the top app.
 
 <p align="center"><img src="docs/battery.png" width="760" alt="Charge history"></p>
 
 <p align="center"><img src="docs/processes.png" width="760" alt="Processes ranked by energy impact"></p>
+
+## Battery-aware Agent Mode
+
+Battery Hog remains advisory by default. When Agent Mode is enabled on the **Workloads**
+page, coding agents can opt into coordination by prefixing a heavyweight command with
+the gate command shown in the app:
+
+```bash
+python3 "/Applications/Battery Hog.app/Contents/Resources/batteryhog_gate.py" -- cargo check
+```
+
+On battery, the gate shares a configurable number of heavy-job lanes across agents and
+applies conservative worker limits to supported toolchains. On AC power it immediately
+passes commands through unchanged. It never kills, pauses, or silently intercepts an
+ungated process; agents keep researching and editing in parallel while builds queue.
 
 ## Install
 
@@ -78,7 +96,7 @@ This outputs `dist/BatteryHog-<version>.dmg`, stapled and ready to share. Attach
 GitHub Release:
 
 ```bash
-gh release create v1.0 dist/BatteryHog-1.0.dmg --title "Battery Hog 1.0"
+gh release create v1.2 dist/BatteryHog-1.2.dmg --title "Battery Hog 1.2"
 ```
 
 > The app uses no third-party libraries, so it needs no special hardened-runtime
@@ -95,6 +113,9 @@ The backend reads only built-in macOS tools and exposes them on `127.0.0.1`:
 | Charge history + wake events | `pmset -g log` |
 | Memory pressure / swap | `vm_stat`, `sysctl` |
 | Per-app CPU / memory | `ps` |
+| Project workloads | `ps`, process ancestry, and cached `lsof` working directories |
+| Sleep blockers | `pmset -g assertions`, `pmset -g custom` |
+| Agent Mode queue | Local JSON registry under Application Support |
 | Uptime | `sysctl kern.boottime` |
 
 The Swift shell (`src/BatteryHogApp.swift`) hosts the dashboard in a `WKWebView` with a

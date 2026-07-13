@@ -243,6 +243,7 @@
   .ins-big{font-size:46px;font-weight:800;letter-spacing:-.02em;margin:8px 0 8px;display:flex;align-items:baseline;gap:4px}
   .ins-big small{font-size:16px;font-weight:600;color:var(--txt-3)}
   .ins-verdict .pill{font-size:12px}
+  .ins-refresh[hidden]{display:none}
   .ins-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
   .ins-tile-v{font-size:25px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
   .ins-tile-k{font-size:11.5px;color:var(--txt-3);margin-top:5px;font-weight:600}
@@ -265,6 +266,95 @@
   .set-thr{display:flex;align-items:center;gap:12px}
   .set-thr input[type=range]{accent-color:var(--green);width:150px;cursor:pointer}
   .set-thr-v{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--txt);width:36px;text-align:right}
+
+  /* development workloads + battery-aware agent mode */
+  .dev-hero{padding:23px 25px;margin-bottom:16px;overflow:hidden;position:relative}
+  .dev-hero:before{content:"";position:absolute;inset:-90px auto auto -70px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(10,132,255,.16),transparent 68%);pointer-events:none}
+  .dev-hero-top{display:flex;align-items:center;justify-content:space-between;gap:16px;position:relative}
+  .dev-kicker{font-size:11px;font-weight:700;color:var(--txt-2);text-transform:uppercase;letter-spacing:.04em}
+  .dev-reading{display:flex;align-items:baseline;gap:4px;margin-top:7px;font-variant-numeric:tabular-nums}
+  .dev-reading strong{font-size:45px;line-height:1;font-weight:800;letter-spacing:-.035em}
+  .dev-reading span{font-size:16px;color:var(--txt-3);font-weight:600}
+  .dev-summary-copy{font-size:12.5px;color:var(--txt-2);margin-top:7px;max-width:520px;line-height:1.45}
+  .dev-metrics{display:grid;grid-template-columns:repeat(4,minmax(78px,1fr));gap:10px;min-width:430px}
+  .dev-metric{padding:12px 13px;border-radius:10px;background:var(--chart-surface);border:1px solid var(--line)}
+  .dev-metric b{display:block;font-size:20px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .dev-metric span{display:block;font-size:10.5px;color:var(--txt-3);font-weight:600;margin-top:3px;white-space:nowrap}
+  .dev-layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);gap:16px;align-items:start}
+  .dev-stack{display:flex;flex-direction:column;gap:16px}
+  .work-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .work-list{display:flex;flex-direction:column}
+  .work-row{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:12px;padding:13px 2px;border-top:1px solid var(--line)}
+  .work-row:first-child{border-top:none}
+  .work-glyph{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:800;letter-spacing:-.01em}
+  .work-main{min-width:0}
+  .work-title-line{display:flex;align-items:center;gap:7px;min-width:0}
+  .work-name{font-size:13.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .agent-tag{font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:5px;background:rgba(94,92,230,.13);color:#514fc2;white-space:nowrap}
+  @media (prefers-color-scheme:dark){.agent-tag{color:#aaa8ff;background:rgba(94,92,230,.25)}}
+  .work-path{font-size:10.5px;color:var(--txt-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-webkit-user-select:text;user-select:text}
+  .tool-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+  .tool-chip{font-size:9.5px;font-weight:600;color:var(--txt-2);background:var(--track);border-radius:5px;padding:2px 6px}
+  .work-stats{text-align:right;white-space:nowrap}
+  .work-stats b{display:block;font-size:13px;font-variant-numeric:tabular-nums}
+  .work-stats span{display:block;font-size:10.5px;color:var(--txt-3);margin-top:3px}
+  .dev-mode-head{display:flex;align-items:center;gap:12px;margin-bottom:13px}
+  .dev-mode-ico{width:40px;height:40px;border-radius:10px;background:linear-gradient(155deg,var(--accent),#5e5ce6);color:#fff;display:grid;place-items:center;flex-shrink:0}
+  .dev-mode-ico svg{width:21px;height:21px}
+  .dev-mode-copy{flex:1;min-width:0}
+  .dev-mode-title{font-size:14px;font-weight:650}
+  .dev-mode-sub{font-size:11.5px;color:var(--txt-2);margin-top:2px;line-height:1.4}
+  .dev-control{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+  .dev-control-label{font-size:12.5px;font-weight:600}
+  .dev-control-sub{font-size:10.5px;color:var(--txt-3);margin-top:2px}
+  .dev-control .seg button{padding:4px 10px;font-size:11px}
+  .gate-command{margin-top:12px;padding:10px 11px;border-radius:8px;background:var(--chart-surface);border:1px solid var(--line);display:flex;align-items:center;gap:8px}
+  .gate-command code{font:10.5px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--txt-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;-webkit-user-select:text;user-select:text}
+  .gate-list{display:flex;flex-direction:column;margin-top:6px}
+  .gate-entry,.sleep-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+  .gate-entry:first-child,.sleep-row:first-child{border-top:none}
+  .gate-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+  .gate-dot.queued{background:var(--amber)}
+  .gate-info,.sleep-info{flex:1;min-width:0}
+  .gate-name,.sleep-name{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .gate-sub,.sleep-sub{font-size:10.5px;color:var(--txt-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .gate-age,.sleep-time{font-size:10.5px;color:var(--txt-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .sleep-mark{width:30px;height:30px;border-radius:8px;background:rgba(255,159,10,.14);color:#9a6300;display:grid;place-items:center;flex-shrink:0}
+  .sleep-mark svg{width:16px;height:16px}
+  .sleep-notice{display:none;align-items:center;gap:10px;margin-top:12px;padding:10px 11px;border-radius:9px;background:rgba(255,159,10,.10);border:1px solid rgba(255,159,10,.18)}
+  .sleep-notice.show{display:flex}
+  .sleep-notice .sleep-mark{background:transparent;width:22px;height:22px}
+  .sleep-notice .link-btn{margin-left:auto;white-space:nowrap}
+  .ins-sleep-card{margin-bottom:16px}
+  @media (prefers-color-scheme:dark){.sleep-mark{color:#ffb84d}}
+  .preview-badge{display:none;margin-left:auto;font-size:9px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;padding:3px 6px;border-radius:5px;background:rgba(255,159,10,.16);color:#915900}
+  body.preview .preview-badge{display:inline-flex}
+  @media (prefers-color-scheme:dark){.preview-badge{color:#ffb84d}}
+  @media (max-width:1080px){.dev-hero-top{align-items:flex-start}.dev-metrics{min-width:340px;grid-template-columns:repeat(2,1fr)}.dev-layout{grid-template-columns:1fr}}
+  .toast{position:fixed;left:calc(50% + 108px);bottom:22px;z-index:50;transform:translate(-50%,12px);padding:9px 14px;border-radius:9px;background:rgba(28,28,30,.92);color:#fff;font-size:11.5px;font-weight:600;box-shadow:0 8px 26px rgba(0,0,0,.24);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;max-width:420px;text-align:center}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  /* first-load experience: visible immediately while the initial stats sample runs */
+  .loading-screen{position:absolute;inset:0;z-index:30;background:var(--content-bg);padding:30px 34px 40px;opacity:1;visibility:visible;transition:opacity .28s ease,visibility 0s linear .28s;overflow:hidden}
+  body.loaded .loading-screen{opacity:0;visibility:hidden;pointer-events:none}
+  .loading-head{display:flex;align-items:center;gap:13px;margin-bottom:34px}
+  .loading-spinner{width:38px;height:38px;border-radius:11px;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent);box-shadow:inset 0 0 0 1px rgba(10,132,255,.16)}
+  .loading-spinner:after{content:"";width:17px;height:17px;border-radius:50%;border:2px solid rgba(10,132,255,.22);border-top-color:var(--accent);animation:spin .8s linear infinite}
+  .loading-title{font-size:24px;font-weight:700;letter-spacing:-.02em}
+  .loading-sub{font-size:12.5px;color:var(--txt-2);margin-top:4px}
+  .loading-stack{display:flex;flex-direction:column;gap:16px}
+  .loading-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .loading-card{height:250px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(180deg,var(--card),var(--card-2));box-shadow:var(--shadow);padding:24px}
+  .loading-card.wide{height:116px}
+  .skel{display:block;border-radius:7px;background:var(--track);animation:skeleton-pulse 1.25s ease-in-out infinite}
+  .skel-label{width:108px;height:11px;margin-bottom:18px}
+  .skel-line{height:13px;margin-top:12px}
+  .skel-line.short{width:42%}.skel-line.med{width:68%}.skel-line.long{width:92%}
+  .skel-orb{width:138px;height:138px;border-radius:50%;margin:18px auto 0}
+  .loading-card.wide .skel-line{height:14px;margin-top:10px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes skeleton-pulse{0%,100%{opacity:.52}50%{opacity:1}}
+  @media (prefers-reduced-motion:reduce){.loading-spinner:after,.skel{animation:none}.loading-screen{transition:none}}
 
   /* top energy users on overview */
   .mini-list{display:flex;flex-direction:column}
@@ -447,7 +537,7 @@
       <div class="logo">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
       </div>
-      <div class="name">Battery Hog</div>
+      <div class="name">Battery Hog</div><span class="preview-badge">Preview</span>
     </div>
     <nav class="nav" role="tablist" aria-label="Sections">
       <div class="nav-label" id="navLabel">Monitor</div>
@@ -459,6 +549,11 @@
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.2"/><circle cx="4" cy="12" r="1.2"/><circle cx="4" cy="18" r="1.2"/></svg></span>
         Processes
         <span class="badge" id="navProcCount">—</span>
+      </button>
+      <button type="button" class="nav-item" data-room="workloads" role="tab" aria-selected="false" aria-controls="page-workloads" id="tab-workloads">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="m7 9 3 3-3 3"/><path d="M12 15h5"/></svg></span>
+        Workloads
+        <span class="badge" id="navWorkCount">—</span>
       </button>
       <button type="button" class="nav-item" data-room="health" role="tab" aria-selected="false" aria-controls="page-health" id="tab-health">
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8" width="15" height="9" rx="2.2"/><path d="M20 11.5v2"/></svg></span>
@@ -481,6 +576,20 @@
 
   <!-- CONTENT -->
   <main class="content" id="content">
+
+    <div class="loading-screen" id="loadingScreen" role="status" aria-live="polite" aria-label="Loading Battery Hog data">
+      <div class="loading-head">
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <div><div class="loading-title" id="loadingTitle">Measuring your Mac</div><div class="loading-sub" id="loadingSub">Battery, memory, processes, workloads &amp; sleep activity</div></div>
+      </div>
+      <div class="loading-stack" aria-hidden="true">
+        <div class="loading-card wide"><span class="skel skel-label"></span><span class="skel skel-line long"></span><span class="skel skel-line med"></span></div>
+        <div class="loading-grid">
+          <div class="loading-card"><span class="skel skel-label"></span><span class="skel skel-orb"></span></div>
+          <div class="loading-card"><span class="skel skel-label"></span><span class="skel skel-line long"></span><span class="skel skel-line med"></span><span class="skel skel-line short"></span></div>
+        </div>
+      </div>
+    </div>
 
     <!-- OVERVIEW -->
     <section class="page active" id="page-overview" role="tabpanel" aria-labelledby="tab-overview" tabindex="0">
@@ -613,7 +722,80 @@
       </div>
     </section>
 
-    <!-- ENERGY -->
+    <!-- DEVELOPMENT WORKLOADS -->
+    <section class="page" id="page-workloads" role="tabpanel" aria-labelledby="tab-workloads" tabindex="0">
+      <div class="page-head">
+        <div class="ph-left">
+          <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="m7 9 3 3-3 3"/><path d="M12 15h5"/></svg></div>
+          <div>
+            <div class="page-title">Workloads</div>
+            <div class="page-sub">Projects, builds &amp; coding agents</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-scroll">
+        <div class="card dev-hero" id="devHero">
+          <div class="dev-hero-top">
+            <div>
+              <div class="dev-kicker">Development power draw</div>
+              <div class="dev-reading"><strong id="devWatts">—</strong><span id="devWattsUnit">W</span></div>
+              <div class="dev-summary-copy" id="devSummaryCopy">Watching for build, test, scan, install, and dev-server activity.</div>
+            </div>
+            <div class="dev-metrics">
+              <div class="dev-metric"><b id="devProjects">—</b><span>Projects</span></div>
+              <div class="dev-metric"><b id="devWorkers">—</b><span>Dev workers</span></div>
+              <div class="dev-metric"><b id="devHeavy">—</b><span>Heavy now</span></div>
+              <div class="dev-metric"><b id="devCpu">—</b><span>Combined CPU</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dev-layout">
+          <div class="card card-pad">
+            <div class="work-card-head">
+              <div class="sec-title" style="margin-bottom:0">Detected workloads</div>
+              <span id="devStatePill"><span class="pill normal">Watching</span></span>
+            </div>
+            <div class="work-list" id="workloadList"></div>
+          </div>
+
+          <div class="dev-stack">
+            <div class="card card-pad" id="agentModeCard">
+              <div class="dev-mode-head">
+                <div class="dev-mode-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="m7 9 3 3-3 3"/><path d="M12 15h5"/></svg></div>
+                <div class="dev-mode-copy"><div class="dev-mode-title">Battery-aware Agent Mode</div><div class="dev-mode-sub" id="agentModeSub">Queue heavy commands on battery; stay unrestricted on AC.</div></div>
+                <div class="switch" id="agentModeSwitch" role="switch" aria-checked="false" aria-label="Battery-aware Agent Mode" tabindex="0"><span class="knob"></span></div>
+              </div>
+              <div class="dev-control">
+                <div><div class="dev-control-label">Heavy-job lanes</div><div class="dev-control-sub">how many builds run together</div></div>
+                <div class="seg" id="devSlots" role="radiogroup" aria-label="Heavy-job lanes"><button data-value="1">1</button><button data-value="2">2</button><button data-value="3">3</button></div>
+              </div>
+              <div class="dev-control">
+                <div><div class="dev-control-label">Workers per job</div><div class="dev-control-sub">compiler threads while mobile</div></div>
+                <div class="seg" id="devWorkersCtl" role="radiogroup" aria-label="Workers per job"><button data-value="1">1</button><button data-value="2">2</button><button data-value="4">4</button></div>
+              </div>
+              <div class="dev-control">
+                <div><div class="dev-control-label">High-draw alert</div><div class="dev-control-sub">notify after two sustained samples</div></div>
+                <div class="seg" id="devDraw" role="radiogroup" aria-label="High draw threshold"><button data-value="25">25W</button><button data-value="30">30W</button><button data-value="40">40W</button></div>
+              </div>
+              <div class="gate-command" title="Prefix a heavy command with this gate">
+                <code id="gateCommand">—</code>
+                <button class="btn" id="copyGateBtn" type="button">Copy</button>
+              </div>
+              <div class="gate-list" id="gateList"></div>
+              <div class="sleep-notice" id="workSleepNotice">
+                <span class="sleep-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A8 8 0 1 1 11.2 3 6.5 6.5 0 0 0 21 12.8z"/></svg></span>
+                <div class="sleep-info"><div class="sleep-name" id="workSleepTitle">Sleep is being blocked</div><div class="sleep-sub" id="workSleepSub">View the full diagnosis in Insights.</div></div>
+                <button class="link-btn" data-jump="insights">View in Insights</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BATTERY HEALTH -->
     <section class="page" id="page-health" role="tabpanel" aria-labelledby="tab-health" tabindex="0">
       <div class="page-head">
         <div class="ph-left">
@@ -694,7 +876,7 @@
       </div>
       <div class="page-scroll">
         <div class="card card-pad" id="insHero">
-          <div class="sec-title" style="margin-bottom:0">Battery life on a charge</div>
+          <div class="work-card-head"><div class="sec-title" style="margin-bottom:0">Battery life on a charge</div><span class="pill ac ins-refresh" id="insRefresh" hidden>Refreshing</span></div>
           <div class="ins-big" id="insRuntime">—</div>
           <div class="ins-verdict" id="insVerdict"></div>
           <div class="foot" id="insRate" style="margin-top:8px">—</div>
@@ -704,6 +886,10 @@
           <div class="card card-pad ins-tile"><div class="ins-tile-v" id="insTileOnBatt">—</div><div class="ins-tile-k">On battery today</div></div>
           <div class="card card-pad ins-tile"><div class="ins-tile-v" id="insTileCharges">—</div><div class="ins-tile-k">Charges today</div></div>
           <div class="card card-pad ins-tile"><div class="ins-tile-v" id="insTileWakes">—</div><div class="ins-tile-k">Overnight wake-ups</div></div>
+        </div>
+        <div class="card card-pad ins-sleep-card">
+          <div class="work-card-head"><div class="sec-title" style="margin-bottom:0">Sleep blockers</div><span id="sleepCount" class="pill normal">None</span></div>
+          <div id="sleepList"></div>
         </div>
         <div class="card card-pad">
           <div class="sec-title">Biggest draws right now</div>
@@ -719,7 +905,7 @@
           <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
           <div>
             <div class="page-title">Settings</div>
-            <div class="page-sub">Menu bar &amp; alerts</div>
+            <div class="page-sub">Menu bar, alerts &amp; agent mode</div>
           </div>
         </div>
       </div>
@@ -732,13 +918,15 @@
             <div class="set-row" data-mb="watts"><div class="set-row-t"><div class="set-row-title">Power draw</div><div class="set-row-sub">live wattage when on battery, e.g. 10W</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
             <div class="set-row" data-mb="time"><div class="set-row-t"><div class="set-row-title">Time remaining</div><div class="set-row-sub">e.g. 5:35</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
             <div class="set-row" data-mb="hog"><div class="set-row-t"><div class="set-row-title">Top app</div><div class="set-row-sub">biggest battery user + its CPU</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
+            <div class="set-row" data-mb="dev"><div class="set-row-t"><div class="set-row-title">Development load</div><div class="set-row-sub">active projects + heavy jobs</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
           </div>
         </div>
 
         <div class="card card-pad">
           <div class="sec-title">Alerts</div>
           <div class="set-rows">
-            <div class="set-row" data-set="alerts"><div class="set-row-t"><div class="set-row-title">Notifications</div><div class="set-row-sub">low battery, full charge &amp; runaway-CPU apps</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
+            <div class="set-row" data-set="alerts"><div class="set-row-t"><div class="set-row-title">Notifications</div><div class="set-row-sub">low battery, full charge, CPU spikes &amp; sustained high draw</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
+            <div class="set-row" data-set="heat"><div class="set-row-t"><div class="set-row-title">Heat alerts</div><div class="set-row-sub">notify when thermal pressure rises, with the likely process or development workload causing it</div></div><div class="switch" role="switch" aria-checked="false" aria-label="Heat alerts" tabindex="0"><span class="knob"></span></div></div>
             <div class="set-row"><div class="set-row-t"><div class="set-row-title">Low-battery alert at</div><div class="set-row-sub">notify when battery drops to this level</div></div><div class="set-thr"><input type="range" id="thrRange" min="5" max="50" step="5" value="20"><span class="set-thr-v" id="thrVal">20%</span></div></div>
           </div>
         </div>
@@ -747,6 +935,7 @@
 
   </main>
 </div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 "use strict";
@@ -757,11 +946,14 @@ const BAT_C=2*Math.PI*80;      // battery ring circumference
 const MEM_C=251.3;             // semicircle arc length (pi * 80)
 const SCAN_C=2*Math.PI*74;     // scan orb circumference
 
-let state={ data:null, room:"overview", sort:"score", lastTs:null, energy:null, measuring:false, pendingMute:new Set(), pendingUnmute:false, pendingSettings:{} };
+let state={ data:null, room:"overview", sort:"score", lastTs:null, energy:null, measuring:false, statsInFlight:false, pendingMute:new Set(), pendingUnmute:false, pendingSettings:{} };
 
 /* ---------- helpers ---------- */
 function fmtGB(g){ return (g==null)?"—":(g>=10?g.toFixed(1):g.toFixed(2))+" GB"; }
 function fmtMem(mb){ if(mb==null) return "—"; return mb>=1024?(mb/1024).toFixed(mb>=10240?0:1)+" GB":Math.round(mb)+" MB"; }
+function fmtDuration(sec){ sec=Math.max(0,Number(sec)||0); if(sec>=86400) return Math.floor(sec/86400)+"d "+Math.floor((sec%86400)/3600)+"h"; if(sec>=3600) return Math.floor(sec/3600)+"h "+Math.floor((sec%3600)/60)+"m"; if(sec>=60) return Math.floor(sec/60)+"m"; return Math.floor(sec)+"s"; }
+let toastTimer=null;
+function toast(message){ const el=$("#toast"); if(!el) return; el.textContent=message; el.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),2200); }
 function colorAt(level){ return level==="high"?"var(--red)":level==="med"?"var(--amber)":"var(--green)"; }
 function levelLabel(level){ return level==="high"?"High":level==="med"?"Med":"Low"; }
 function fmtW(v){ const n=Number(v); return isFinite(n)?n.toFixed(2):"—"; }
@@ -844,10 +1036,24 @@ $$('#page-settings .set-row[data-mb] .switch').forEach(sw=>{
   sw.addEventListener("click",toggleAlerts);
   sw.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleAlerts(); } });
 })();
+(function(){ const sw=document.querySelector('#page-settings .set-row[data-set="heat"] .switch'); if(!sw) return;
+  sw.addEventListener("click",toggleHeatAlerts);
+  sw.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleHeatAlerts(); } });
+})();
 (function(){ const thr=$("#thrRange"); if(!thr) return;
   thr.addEventListener("input",()=>{ const v=parseInt(thr.value,10)||20; $("#thrVal").textContent=v+"%"; state.pendingSettings.low_threshold=v; applyPendingSettings(); });
   thr.addEventListener("change",()=>{ const v=parseInt(thr.value,10)||20; state.pendingSettings.low_threshold=v; fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({low_threshold:v})}).catch(()=>{}); });
 })();
+(function(){ const sw=$("#agentModeSwitch"); if(!sw) return;
+  const t=()=>toggleAgentMode();
+  sw.addEventListener("click",t);
+  sw.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); t(); } });
+})();
+[["#devSlots","slots"],["#devWorkersCtl","workers"],["#devDraw","draw_threshold"]].forEach(([id,key])=>{
+  const root=$(id); if(!root) return;
+  root.addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) setDevSetting(key,parseInt(b.dataset.value,10)); });
+});
+$("#copyGateBtn").addEventListener("click",copyGateCommand);
 $("#sgList").addEventListener("click",e=>{
   const ig=e.target.closest("[data-act='ignore']"); if(ig){ muteApp(ig.dataset.name,true); return; }
   if(e.target.closest("[data-act='unmute']")) muteApp(null,false);
@@ -879,6 +1085,8 @@ async function muteApp(name,on){
 
 /* ---------- fetch ---------- */
 async function fetchStats(){
+  if(state.statsInFlight) return;
+  state.statsInFlight=true;
   try{
     const r=await fetch("/api/stats",{cache:"no-store"});
     const d=await r.json();
@@ -893,20 +1101,32 @@ async function fetchStats(){
     if("alerts" in ps && sv.alerts===ps.alerts) delete ps.alerts;
     if("low_threshold" in ps && sv.low_threshold===ps.low_threshold) delete ps.low_threshold;
     if(ps.menubar){ const mb=sv.menubar||{}; for(const k in ps.menubar){ if(mb[k]===ps.menubar[k]) delete ps.menubar[k]; } if(!Object.keys(ps.menubar).length) delete ps.menubar; }
+    if(ps.dev){ const dv=sv.dev||{}; for(const k in ps.dev){ if(dv[k]===ps.dev[k]) delete ps.dev[k]; } if(!Object.keys(ps.dev).length) delete ps.dev; }
+    if(ps.heat){ const heat=sv.heat||{}; for(const k in ps.heat){ if(heat[k]===ps.heat[k]) delete ps.heat[k]; } if(!Object.keys(ps.heat).length) delete ps.heat; }
     applyPendingSettings();
     render();
+    document.body.classList.add("loaded");
+    $("#loadingScreen").setAttribute("aria-hidden","true");
     $("#liveDot").style.background="";
   }catch(e){
     $("#liveDot").style.background="var(--red)";
     $("#updatedLabel").textContent="connection lost";
+    if(!state.data){
+      $("#loadingTitle").textContent="Still connecting";
+      $("#loadingSub").textContent="Battery Hog will retry automatically.";
+    }
+  }finally{
+    state.statsInFlight=false;
   }
 }
 
 /* ---------- render all (does not change room or sort) ---------- */
 function render(){
   const d=state.data; if(!d) return;
-  renderBattery(); renderMemory(); renderLowPower(); renderTopUsers(); renderProcesses(); renderQuick(); renderHealth(); renderSuggestions(); renderSettings(); renderInsights();
+  document.body.classList.toggle("preview",!!d.preview);
+  renderBattery(); renderMemory(); renderLowPower(); renderTopUsers(); renderProcesses(); renderQuick(); renderWorkloads(); renderSleepBlockers(); renderHealth(); renderSuggestions(); renderSettings(); renderInsights();
   $("#navProcCount").textContent=d.processes? d.processes.length : "—";
+  $("#navWorkCount").textContent=(d.dev_summary&&d.dev_summary.projects!=null)?d.dev_summary.projects:"—";
   $("#coresLabel").textContent=(d.ncpu??"—")+" cores";
   updateHistNow();
   updateAge();
@@ -1042,6 +1262,115 @@ function renderQuick(){
   $("#qsRam").textContent=fmtGB(m.total_gb);
 }
 
+/* ---------- development workloads + battery-aware agent gate ---------- */
+function setDevSetting(key,value){
+  state.pendingSettings.dev=Object.assign({},state.pendingSettings.dev||{},{[key]:value});
+  applyPendingSettings(); renderWorkloads();
+  fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dev:{[key]:value}})}).catch(()=>{});
+}
+function toggleAgentMode(){
+  const dev=((state.data||{}).settings||{}).dev||{};
+  const want=!dev.enabled;
+  setDevSetting("enabled",want);
+  toast(want?"Agent Mode on — gated commands coordinate on battery":"Agent Mode off — commands pass through normally");
+}
+async function copyGateCommand(){
+  const command=(((state.data||{}).gate||{}).command||"")+" <command>";
+  if(!command.trim()) return;
+  try{
+    await navigator.clipboard.writeText(command);
+    toast("Gate command copied");
+  }catch(_){
+    const t=document.createElement("textarea"); t.value=command; t.style.position="fixed"; t.style.opacity="0";
+    document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); toast("Gate command copied");
+  }
+}
+function renderDevSegment(id,value){
+  $$(id+" button").forEach(button=>{
+    const on=Number(button.dataset.value)===Number(value);
+    button.classList.toggle("on",on); button.setAttribute("aria-checked",on?"true":"false");
+  });
+}
+function workloadGlyph(w){
+  const family=(w.families&&w.families[0])||"Dev";
+  const map={Rust:"Rs",Node:"JS",JVM:"Jv",Kotlin:"Kt",Apple:"",Python:"Py",Go:"Go",Security:"✓",Native:"C"};
+  return map[family]||family.slice(0,2);
+}
+function renderWorkloads(){
+  const d=state.data||{}, summary=d.dev_summary||{}, workloads=d.workloads||[];
+  const battery=d.battery||{}, power=d.power||{}, settings=d.settings||{}, dev=settings.dev||{}, gate=d.gate||{};
+  const onBattery=!battery.on_ac;
+  const watts=(onBattery&&power.watts!=null)?Number(power.watts):null;
+  $("#devWatts").textContent=watts==null?(battery.on_ac?"AC":"—"):Math.round(watts);
+  $("#devWattsUnit").textContent=watts==null&&battery.on_ac?"power":"W";
+  $("#devProjects").textContent=summary.projects??0;
+  $("#devWorkers").textContent=summary.workers??0;
+  $("#devHeavy").textContent=summary.heavy_workers??0;
+  $("#devCpu").textContent=Math.round(summary.cpu||0)+"%";
+  let copy="No development workloads detected right now.";
+  if((summary.projects||0)>0){
+    const agents=(summary.agents||[]).length?(" · driven by "+summary.agents.join(" + ")):"";
+    copy=(summary.active_workers||0)+" active worker"+((summary.active_workers||0)===1?"":"s")+" across "+summary.projects+" project"+(summary.projects===1?"":"s")+agents+".";
+    if(onBattery&&watts!=null&&watts>=(dev.draw_threshold||30)) copy+=" Draw is above your "+(dev.draw_threshold||30)+" W mobile threshold.";
+  }
+  $("#devSummaryCopy").textContent=copy;
+  const level=summary.level||"low", stateLabel=level==="high"?"Heavy":level==="med"?"Active":"Light";
+  const stateClass=level==="high"?"high":level==="med"?"elevated":"normal";
+  $("#devStatePill").innerHTML=`<span class="pill ${stateClass}"><span class="pdot" style="background:${colorAt(level)}"></span>${stateLabel}</span>`;
+
+  const root=$("#workloadList");
+  root.innerHTML=workloads.length?workloads.map(w=>{
+    const path=w.context?(w.path+" / "+w.context):w.path;
+    const agents=(w.agents||[]).map(a=>`<span class="agent-tag">${esc(a)}</span>`).join("");
+    const tools=(w.tools||[]).map(t=>`<span class="tool-chip">${esc(t.name)}${t.count>1?" ×"+t.count:""}</span>`).join("");
+    const pillClass=w.level==="high"?"high":w.level==="med"?"elevated":"normal";
+    return `<div class="work-row"><div class="work-glyph">${esc(workloadGlyph(w))}</div><div class="work-main"><div class="work-title-line"><span class="work-name">${esc(w.name)}</span>${agents}<span class="pill ${pillClass}" style="padding:2px 7px">${esc(w.status)}</span></div><div class="work-path">${esc(path||"Background")}</div><div class="tool-chips">${tools}</div></div><div class="work-stats"><b>${Math.round(w.cpu||0)}% CPU</b><span>${w.workers||0} workers · ${fmtMem(w.mem_mb)}</span></div></div>`;
+  }).join(""):`<div class="empty">Start a dev server, build, test, or agent task and it will appear here.</div>`;
+
+  const sw=$("#agentModeSwitch");
+  sw.setAttribute("aria-checked",dev.enabled?"true":"false");
+  renderDevSegment("#devSlots",dev.slots||2);
+  renderDevSegment("#devWorkersCtl",dev.workers||2);
+  renderDevSegment("#devDraw",dev.draw_threshold||30);
+  if(dev.enabled){
+    $("#agentModeSub").textContent=onBattery
+      ? "Coordinating gated commands across "+(dev.slots||2)+" heavy-job lane"+((dev.slots||2)===1?"":"s")+"."
+      : "Ready. Gated commands stay unrestricted while you are on AC power.";
+  }else{
+    $("#agentModeSub").textContent="Advisory only. Turn on to queue heavy commands on battery.";
+  }
+  $("#gateCommand").textContent=(gate.command||"—")+" <command>";
+  const active=gate.active||[], queued=gate.queued||[], entries=active.concat(queued);
+  $("#gateList").innerHTML=entries.length?entries.map(item=>{
+    const isQueued=item.state==="queued";
+    const since=isQueued?item.requested_at:item.started_at;
+    const age=since?fmtDuration(Date.now()/1000-since):"now";
+    return `<div class="gate-entry"><span class="gate-dot ${isQueued?"queued":""}"></span><div class="gate-info"><div class="gate-name">${esc(item.label||"Command")}</div><div class="gate-sub">${esc(item.project||"")}${item.cwd?" · "+esc(item.cwd):""}</div></div><span class="gate-age">${isQueued?"queued ":"running "}${age}</span></div>`;
+  }).join(""):`<div class="foot" style="margin-top:10px">${dev.enabled?"No gated commands active. Agents keep editing and reasoning in parallel.":"The gate is installed but inactive until Agent Mode is enabled."}</div>`;
+}
+
+function renderSleepBlockers(){
+  const d=state.data||{};
+  const userBlockers=(d.sleep_blockers||[]).filter(b=>!b.system&&b.duration_s>=60);
+  const policy=d.power_policy||{};
+  const displayWarning=policy.display_sleep!=null&&policy.display_sleep>=20;
+  const issueCount=userBlockers.length+(displayWarning?1:0);
+  const count=$("#sleepCount");
+  count.className="pill "+(issueCount?"elevated":"normal"); count.textContent=issueCount?(issueCount+" found"):"None";
+  const moon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A8 8 0 1 1 11.2 3 6.5 6.5 0 0 0 21 12.8z"/></svg>';
+  const blockerRows=userBlockers.map(b=>`<div class="sleep-row"><span class="sleep-mark">${moon}</span><div class="sleep-info"><div class="sleep-name">${esc(b.name)} is preventing idle sleep</div><div class="sleep-sub">${esc(b.detail||b.assertion)}</div></div><span class="sleep-time">${fmtDuration(b.duration_s)}</span></div>`);
+  if(displayWarning) blockerRows.push(`<div class="sleep-row"><span class="sleep-mark">${moon}</span><div class="sleep-info"><div class="sleep-name">Display timeout is ${policy.display_sleep} minutes</div><div class="sleep-sub">The Mac cannot idle-sleep while the display remains awake.</div></div><span class="sleep-time">Battery</span></div>`);
+  $("#sleepList").innerHTML=blockerRows.length?blockerRows.join(""):`<div class="foot" style="margin-top:10px">No user apps are holding an idle-sleep assertion.</div>`;
+  const notice=$("#workSleepNotice");
+  notice.classList.toggle("show",issueCount>0);
+  if(issueCount){
+    $("#workSleepTitle").textContent=issueCount+" sleep issue"+(issueCount===1?"":"s")+" detected";
+    $("#workSleepSub").textContent=userBlockers.length
+      ? userBlockers[0].name+" has blocked idle sleep for "+fmtDuration(userBlockers[0].duration_s)+"."
+      : "The battery display timeout is set to "+policy.display_sleep+" minutes.";
+  }
+}
+
 /* ---------- suggestions (derived from live data; no extra permissions) ---------- */
 const sgIcon={
   mem:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 6V4M12 6V4M16 6V4M8 20v-2M12 20v-2M16 20v-2"/></svg>',
@@ -1069,13 +1398,23 @@ function applyPendingSettings(){
   if("alerts" in ps) state.data.settings.alerts=ps.alerts;
   if("low_threshold" in ps) state.data.settings.low_threshold=ps.low_threshold;
   if(ps.menubar) state.data.settings.menubar=Object.assign({},state.data.settings.menubar||{},ps.menubar);
+  if(ps.dev) state.data.settings.dev=Object.assign({},state.data.settings.dev||{},ps.dev);
+  if(ps.heat) state.data.settings.heat=Object.assign({},state.data.settings.heat||{},ps.heat);
 }
 async function toggleAlerts(){
   const cur=!!(state.data&&state.data.settings&&state.data.settings.alerts);
   state.pendingSettings.alerts=!cur;
   applyPendingSettings(); renderAlertToggle(); renderSettings();
-  toast(!cur?"Alerts on — low battery, CPU spikes & full charge":"Alerts off");
+  toast(!cur?"Alerts on — including sustained high battery draw":"Alerts off");
   try{ await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({alerts:!cur})}); }catch(e){}
+}
+async function toggleHeatAlerts(){
+  const heat=(state.data&&state.data.settings&&state.data.settings.heat)||{};
+  const on=!heat.enabled;
+  state.pendingSettings.heat=Object.assign({},state.pendingSettings.heat||{},{enabled:on});
+  applyPendingSettings(); renderSettings();
+  toast(on?"Heat alerts on — macOS may ask for notification permission":"Heat alerts off");
+  try{ await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({heat:{enabled:on}})}); }catch(e){}
 }
 
 /* ---------- settings (menu bar + alerts) ---------- */
@@ -1083,11 +1422,13 @@ function mbPreviewText(){
   const s=(state.data&&state.data.settings&&state.data.settings.menubar)||{};
   const b=(state.data&&state.data.battery)||{}, pw=(state.data&&state.data.power)||{};
   const procs=(state.data&&state.data.processes)||[];
+  const dev=(state.data&&state.data.dev_summary)||{};
   const parts=[];
   if(s.percent!==false && b.percent!=null) parts.push(b.percent+"%");
   if(s.watts && pw.watts!=null && pw.direction!=="ac") parts.push(Math.round(pw.watts)+"W");
   if(s.time && b.time && (b.state==="charging"||b.state==="discharging")) parts.push(b.time);
   if(s.hog && procs[0]){ let n=procs[0].name; if(n.length>12) n=n.slice(0,11)+"…"; parts.push(n+" "+Math.round(procs[0].cpu||0)+"%"); }
+  if(s.dev && dev.projects) parts.push((dev.heavy_workers||0)+" jobs · "+dev.projects+" dev");
   return parts.length?parts.join(" · "):"just the icon";
 }
 function renderSettings(){
@@ -1098,6 +1439,8 @@ function renderSettings(){
   });
   const asw=document.querySelector('#page-settings .set-row[data-set="alerts"] .switch');
   if(asw) asw.setAttribute("aria-checked",st.alerts?"true":"false");
+  const hsw=document.querySelector('#page-settings .set-row[data-set="heat"] .switch');
+  if(hsw) hsw.setAttribute("aria-checked",st.heat&&st.heat.enabled?"true":"false");
   const thr=$("#thrRange"), thv=$("#thrVal");
   if(thr&&document.activeElement!==thr) thr.value=st.low_threshold||20;
   if(thv) thv.textContent=(st.low_threshold||20)+"%";
@@ -1114,16 +1457,24 @@ function fmtHrs(h){ if(h==null) return "—"; if(h>=1) return (h>=10?Math.round(
 function renderInsights(){
   const d=state.data; if(!d) return;
   const ins=d.insights||{}, t=ins.today||{}, w=ins.week||{};
+  const refreshing=!!(d.insights_loading||d.insights_refreshing||d.insights_stale||ins.loading||ins.stale);
+  const hasHistory=ins.ok===true
+    || [t.runtime_h,w.runtime_h,t.rate,w.rate].some(v=>v!=null)
+    || Number(t.on_battery_h)>0 || Number(w.on_battery_h)>0
+    || Number(ins.charges)>0 || Number(ins.wakes)>0;
+  const refreshEl=$("#insRefresh");
+  if(refreshEl) refreshEl.hidden=!refreshing;
   const rt=(t.runtime_h!=null)?t.runtime_h:w.runtime_h;
   const rate=(t.rate!=null)?t.rate:w.rate;
-  const rEl=$("#insRuntime"); if(rEl) rEl.innerHTML = rt!=null ? ("≈ "+(rt>=10?Math.round(rt):rt.toFixed(1))+'<small>h per charge</small>') : "—";
+  const rEl=$("#insRuntime"); if(rEl) rEl.innerHTML = rt!=null ? ("≈ "+(rt>=10?Math.round(rt):rt.toFixed(1))+'<small>h per charge</small>') : (refreshing&&!hasHistory?'Updating<small>power history</small>':"—");
   let verdict="Not enough data yet", vc="ac";
   if(rt!=null){ if(rt<5){verdict="Heavy drain";vc="high";} else if(rt<8){verdict="Moderate drain";vc="elevated";} else {verdict="Light drain";vc="normal";} }
+  else if(refreshing&&!hasHistory) verdict="Scanning power history";
   const vEl=$("#insVerdict"); if(vEl) vEl.innerHTML=`<span class="pill ${vc}">${verdict}</span>`;
   const rateEl=$("#insRate");
   if(rateEl) rateEl.textContent = rate!=null
     ? ("Draining about "+rate+"% per hour on battery"+((ins.wakes||0)>=15?" · "+ins.wakes+" overnight wake-ups are adding to it.":"."))
-    : "Use your Mac on battery for a little while and this will fill in.";
+    : (refreshing&&!hasHistory?"Battery Hog is reading your power history in the background.":"Use your Mac on battery for a little while and this will fill in.");
   setStat("#insTileRate", rate!=null?rate+"%/h":"—");
   const sub=$("#insTileRateSub"); if(sub) sub.textContent = w.rate!=null?("· wk "+w.rate):"";
   setStat("#insTileOnBatt", fmtHrs(t.on_battery_h));
@@ -1140,13 +1491,28 @@ function renderSuggestions(){
   renderAlertToggle();
   const list=$("#sgList"); if(!list) return;
   const m=d.memory||{}, b=d.battery||{}, hh=d.health||{}, procs=d.processes||[];
+  const dev=d.dev_summary||{}, power=d.power||{}, devSettings=(d.settings||{}).dev||{};
+  const blockers=(d.sleep_blockers||[]).filter(x=>!x.system&&x.stale);
+  const devHigh=!b.on_ac&&((dev.heavy_workers||0)>=2||(power.watts||0)>=(devSettings.draw_threshold||30));
   const ignored=new Set(d.ignored||[]);
   const hogs=procs.filter(p=>!p.protected && !ignored.has(p.name));
   const topCpu=hogs.slice().sort((a,x)=>(x.cpu||0)-(a.cpu||0))[0];
   const topMem=hogs.slice().sort((a,x)=>(x.mem_mb||0)-(a.mem_mb||0))[0];
   const S=[];
+  if(devHigh){
+    const draw=power.watts!=null?Math.round(power.watts)+" W · ":"";
+    S.push({sev:"high",icon:"cpu",title:(dev.heavy_workers||dev.active_workers||0)+" heavy dev workers across "+(dev.projects||0)+" projects",
+      desc:draw+"Agent Mode can coordinate builds without closing your tools.",act:{jump:"workloads",label:"View workloads"}});
+  }
+  if(blockers.length){
+    const blocker=blockers[0];
+    S.push({sev:"med",icon:"moon",title:blocker.name+" is preventing idle sleep",
+      desc:"The sleep assertion has been active for "+fmtDuration(blocker.duration_s)+".",act:{jump:"insights",label:"Inspect"}});
+  }
   if(m.pressure==="high"){
-    if(topMem) S.push({sev:"high",icon:"mem",title:"Memory is under high pressure",
+    if((dev.workers||0)>=8) S.push({sev:"high",icon:"mem",title:"Memory is under high pressure",
+      desc:(m.swap_used_mb?fmtMem(m.swap_used_mb)+" on swap — ":"")+"your active dev workloads are competing for RAM.",act:{jump:"workloads",label:"View workloads"}});
+    else if(topMem) S.push({sev:"high",icon:"mem",title:"Memory is under high pressure",
       desc:(m.swap_used_mb?fmtMem(m.swap_used_mb)+" on swap — ":"")+"freeing RAM will ease the battery drain.",
       app:topMem,act:{kill:topMem,label:"Quit "+topMem.name}});
     else S.push({sev:"high",icon:"mem",title:"Memory is under high pressure",
@@ -1159,7 +1525,7 @@ function renderSuggestions(){
     S.push({sev:"high",icon:"batt",title:"Battery is low ("+b.percent+"%)",
       desc:"Turn on Low Power Mode to stretch the remaining charge.",act:{lpm:true,label:"Turn on"}});
   }
-  if(topCpu && (topCpu.cpu||0)>=40 && !(m.pressure==="high" && topMem && topCpu.name===topMem.name)){
+  if(!devHigh && topCpu && (topCpu.cpu||0)>=40 && !(m.pressure==="high" && topMem && topCpu.name===topMem.name)){
     S.push({sev:"med",icon:"cpu",title:topCpu.name+" is working hard",
       desc:"Using "+Math.round(topCpu.cpu)+"% CPU — quitting it would save power.",app:topCpu,act:{kill:topCpu,label:"Quit"}});
   }

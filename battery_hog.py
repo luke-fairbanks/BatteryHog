@@ -24,6 +24,9 @@ import time
 import webbrowser
 from datetime import datetime
 
+from batteryhog_gate import gate_command, gate_snapshot
+from batteryhog_workloads import discover_workloads, parse_pmset_assertions
+
 # ---------------------------------------------------------------------------
 # System constants (read once at startup)
 # ---------------------------------------------------------------------------
@@ -53,6 +56,8 @@ CRITICAL_NAMES = {
     "cfprefsd", "coreaudiod", "Dock", "Finder", "SystemUIServer",
     "Terminal", "iTerm2", "iTerm", "Spotlight", "controlcenter",
     "Control Center", "NotificationCenter", "secd", "trustd",
+    "pmset", "ioreg", "system_profiler", "vm_stat", "sysctl", "ps",
+    "lsof", "powermetrics", "osascript",
 }
 
 def osascript_admin(shell_cmd, timeout=60):
@@ -112,21 +117,21 @@ def parse_cputime(t):
 
 
 def snapshot():
-    """pid -> (rss_kb, cputime_seconds, command_string)"""
-    out = run(["ps", "-axo", "pid=,rss=,time=,command="])
+    """pid -> (ppid, rss_kb, cputime_seconds, command_string)"""
+    out = run(["ps", "-axo", "pid=,ppid=,rss=,time=,command="])
     d = {}
     for line in out.splitlines():
         line = line.rstrip()
         if not line.strip():
             continue
-        parts = line.split(None, 3)
-        if len(parts) == 3:
+        parts = line.split(None, 4)
+        if len(parts) == 4:
             parts.append("")
-        if len(parts) < 4:
+        if len(parts) < 5:
             continue
-        pid, rss, tm, cmd = parts
+        pid, ppid, rss, tm, cmd = parts
         try:
-            d[int(pid)] = (int(rss), parse_cputime(tm), cmd)
+            d[int(pid)] = (int(ppid), int(rss), parse_cputime(tm), cmd)
         except Exception:
             continue
     return d
@@ -163,56 +168,76 @@ def is_protected(name, path, command):
     return False
 
 
-_PROC = {"t": 0.0, "data": None}
+_PROC = {"t": 0.0, "processes": None, "workloads": [], "summary": {}}
+_PROC_LOCK = threading.Lock()
+_PROC_TTL = 6.0
 
-def get_processes():
+def get_process_data():
     # cache briefly so the web + menu-bar + alert pollers don't each pay the
     # 0.8s sampling cost when they land close together
-    if _PROC["data"] is not None and time.monotonic() - _PROC["t"] < 4.0:
-        return _PROC["data"]
-    s0 = snapshot()
-    t0 = time.monotonic()
-    time.sleep(0.8)
-    s1 = snapshot()
-    dt = max(0.2, time.monotonic() - t0)
+    if (_PROC["processes"] is not None
+            and time.monotonic() - _PROC["t"] < _PROC_TTL):
+        return _PROC
+    # ThreadingHTTPServer, the native menu and the alert monitor can all land
+    # here together. Only one caller should pay for a cold CPU sample; callers
+    # that queued behind it reuse the completed result.
+    with _PROC_LOCK:
+        if (_PROC["processes"] is not None
+                and time.monotonic() - _PROC["t"] < _PROC_TTL):
+            return _PROC
 
-    groups = {}
-    for pid, (rss, ct1, cmd) in s1.items():
-        prev = s0.get(pid)
-        ct0 = prev[1] if prev else ct1            # new process -> 0 delta
-        cpu = max(0.0, (ct1 - ct0)) / dt * 100.0
-        name, bundle, path = classify(cmd)
-        g = groups.get(name)
-        if not g:
-            g = {"name": name, "bundle": bundle, "path": path,
-                 "cpu": 0.0, "mem_kb": 0, "pids": [],
-                 "protected": is_protected(name, path, cmd)}
-            groups[name] = g
-        g["cpu"] += cpu
-        g["mem_kb"] += rss
-        g["pids"].append(pid)
+        s0 = snapshot()
+        t0 = time.monotonic()
+        time.sleep(0.8)
+        s1 = snapshot()
+        dt = max(0.2, time.monotonic() - t0)
 
-    procs = []
-    for g in groups.values():
-        cpu = round(g["cpu"], 1)
-        mem_mb = round(g["mem_kb"] / 1024.0, 1)
-        score = cpu + mem_mb / 50.0
-        if cpu >= 50 or score >= 80:
-            level = "high"
-        elif cpu >= 12 or score >= 25:
-            level = "med"
-        else:
-            level = "low"
-        procs.append({
-            "name": g["name"], "cpu": cpu, "mem_mb": mem_mb,
-            "procs": len(g["pids"]), "pids": g["pids"][:50],
-            "bundle": g["bundle"], "protected": g["protected"],
-            "path": g["path"],
-            "level": level, "score": round(score, 1),
-        })
-    procs.sort(key=lambda p: p["score"], reverse=True)
-    _PROC.update(t=time.monotonic(), data=procs[:40])
-    return _PROC["data"]
+        groups = {}
+        samples = []
+        for pid, (ppid, rss, ct1, cmd) in s1.items():
+            prev = s0.get(pid)
+            ct0 = prev[2] if prev else ct1            # new process -> 0 delta
+            cpu = max(0.0, (ct1 - ct0)) / dt * 100.0
+            samples.append({"pid": pid, "ppid": ppid, "rss_kb": rss,
+                            "cpu": cpu, "command": cmd})
+            name, bundle, path = classify(cmd)
+            g = groups.get(name)
+            if not g:
+                g = {"name": name, "bundle": bundle, "path": path,
+                     "cpu": 0.0, "mem_kb": 0, "pids": [],
+                     "protected": is_protected(name, path, cmd)}
+                groups[name] = g
+            g["cpu"] += cpu
+            g["mem_kb"] += rss
+            g["pids"].append(pid)
+
+        procs = []
+        for g in groups.values():
+            cpu = round(g["cpu"], 1)
+            mem_mb = round(g["mem_kb"] / 1024.0, 1)
+            score = cpu + mem_mb / 50.0
+            if cpu >= 50 or score >= 80:
+                level = "high"
+            elif cpu >= 12 or score >= 25:
+                level = "med"
+            else:
+                level = "low"
+            procs.append({
+                "name": g["name"], "cpu": cpu, "mem_mb": mem_mb,
+                "procs": len(g["pids"]), "pids": g["pids"][:50],
+                "bundle": g["bundle"], "protected": g["protected"],
+                "path": g["path"],
+                "level": level, "score": round(score, 1),
+            })
+        procs.sort(key=lambda p: p["score"], reverse=True)
+        dev = discover_workloads(samples)
+        _PROC.update(t=time.monotonic(), processes=procs[:40],
+                     workloads=dev["workloads"], summary=dev["summary"])
+        return _PROC
+
+
+def get_processes():
+    return get_process_data()["processes"]
 
 
 def get_battery():
@@ -382,19 +407,57 @@ def get_uptime():
     return {"secs": secs, "days": round(secs / 86400.0, 1)}
 
 
+_SLEEP = {"t": 0.0, "blockers": None, "policy": None}
+
+
+def get_sleep_data():
+    """Live sleep blockers plus the current battery sleep/display policy."""
+    now = time.monotonic()
+    if _SLEEP["blockers"] is not None and now - _SLEEP["t"] < 12:
+        return _SLEEP
+
+    blockers = parse_pmset_assertions(run(["pmset", "-g", "assertions"]))
+    custom = run(["pmset", "-g", "custom"])
+    battery_section = custom.split("Battery Power:", 1)[-1]
+    if "AC Power:" in battery_section:
+        battery_section = battery_section.split("AC Power:", 1)[0]
+
+    def setting(name):
+        match = re.search(r"^\s*%s\s+(\d+)\s*$" % re.escape(name),
+                          battery_section, re.MULTILINE)
+        return int(match.group(1)) if match else None
+
+    policy = {
+        "display_sleep": setting("displaysleep"),
+        "system_sleep": setting("sleep"),
+        "powernap": setting("powernap"),
+        "tcpkeepalive": setting("tcpkeepalive"),
+    }
+    _SLEEP.update(t=now, blockers=blockers, policy=policy)
+    return _SLEEP
+
+
 # ---------------------------------------------------------------------------
 # Charge history (parsed from `pmset -g log`, ~the last week of events)
 # ---------------------------------------------------------------------------
 
 _PLOG = {"t": 0.0, "raw": None}
+_PLOG_LOCK = threading.Lock()
+
 def _pmset_log():
     """Raw `pmset -g log` output, cached ~2 min (it is large + slow)."""
     now = time.time()
     if _PLOG["raw"] is not None and now - _PLOG["t"] < 120:
         return _PLOG["raw"]
-    raw = run(["pmset", "-g", "log"], timeout=20)
-    _PLOG.update(t=now, raw=raw)
-    return raw
+    # The log can be tens of megabytes and take several seconds. Prevent
+    # concurrent history/insights requests from launching duplicate scans.
+    with _PLOG_LOCK:
+        now = time.time()
+        if _PLOG["raw"] is not None and now - _PLOG["t"] < 120:
+            return _PLOG["raw"]
+        raw = run(["pmset", "-g", "log"], timeout=20)
+        _PLOG.update(t=time.time(), raw=raw)
+        return raw
 
 def get_wakes(hours=14):
     """Count dark-wake events in the last `hours` (overnight battery drain)."""
@@ -499,7 +562,11 @@ def get_history(days=1):
     }
 
 
-IGNORE_FILE = os.path.expanduser("~/Library/Application Support/BatteryHog/ignored.json")
+DATA_DIR = os.environ.get(
+    "BATTERY_HOG_DATA_DIR",
+    os.path.expanduser("~/Library/Application Support/BatteryHog"),
+)
+IGNORE_FILE = os.path.join(DATA_DIR, "ignored.json")
 
 def _load_ignored():
     try:
@@ -523,11 +590,15 @@ _IGNORED = _load_ignored()   # apps the user muted from quit-suggestions
 # Settings (opt-in alerts) + the background notification monitor
 # ---------------------------------------------------------------------------
 
-SETTINGS_FILE = os.path.expanduser("~/Library/Application Support/BatteryHog/settings.json")
+SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 _DEFAULT_SETTINGS = {
     "alerts": False,
     "low_threshold": 20,
-    "menubar": {"percent": True, "watts": True, "time": False, "hog": False},
+    "menubar": {"percent": True, "watts": True, "time": False,
+                "hog": False, "dev": False},
+    "dev": {"enabled": False, "slots": 2, "workers": 2,
+            "draw_threshold": 30, "notify_draw": True},
+    "heat": {"enabled": False},
 }
 
 def _load_settings():
@@ -536,10 +607,30 @@ def _load_settings():
         with open(SETTINGS_FILE, encoding="utf-8") as f:
             v = json.load(f)
             if isinstance(v, dict):
-                mb = v.pop("menubar", None)
-                s.update(v)
+                # Read nested groups without removing them from the parsed
+                # object. This keeps loading side-effect free and prevents an
+                # invalid group from replacing its validated defaults.
+                mb = v.get("menubar")
+                dev = v.get("dev")
+                heat = v.get("heat")
+                s.update({k: value for k, value in v.items()
+                          if k not in ("menubar", "dev", "heat")})
                 if isinstance(mb, dict):
                     s["menubar"].update({k: bool(mb[k]) for k in s["menubar"] if k in mb})
+                if isinstance(dev, dict):
+                    for key in ("enabled", "notify_draw"):
+                        if key in dev:
+                            s["dev"][key] = bool(dev[key])
+                    for key, lo, hi in (("slots", 1, 4), ("workers", 1, 8),
+                                        ("draw_threshold", 10, 80)):
+                        if key in dev:
+                            try:
+                                s["dev"][key] = max(lo, min(hi, int(dev[key])))
+                            except (TypeError, ValueError):
+                                pass
+                if (isinstance(heat, dict)
+                        and isinstance(heat.get("enabled"), bool)):
+                    s["heat"]["enabled"] = heat["enabled"]
     except Exception:
         pass
     return s
@@ -562,7 +653,8 @@ def _notify(title, msg):
     except Exception:
         pass
 
-_ALERT = {"low": False, "full": False, "cpu": set()}
+_ALERT = {"low": False, "full": False, "cpu": set(),
+          "draw": False, "draw_hits": 0}
 
 def _alert_loop():
     """Fire native notifications for low battery / fully charged / CPU spikes.
@@ -595,6 +687,24 @@ def _alert_loop():
                         if p["name"] not in _ALERT["cpu"]:
                             _notify("High CPU", "%s is using %.0f%% CPU." % (p["name"], p["cpu"]))
                 _ALERT["cpu"] = hot
+                # sustained high system draw while on battery. Two consecutive
+                # minute samples are required so short compiler bursts do not nag.
+                dev_settings = _SETTINGS.get("dev", {})
+                draw_threshold = int(dev_settings.get("draw_threshold", 30) or 30)
+                power = get_power()
+                if (dev_settings.get("notify_draw", True) and not b.get("on_ac")
+                        and (power.get("watts") or 0) >= draw_threshold):
+                    _ALERT["draw_hits"] += 1
+                    if _ALERT["draw_hits"] >= 2 and not _ALERT["draw"]:
+                        summary = get_process_data().get("summary", {})
+                        msg = "%.0f W with %d active dev workers across %d projects." % (
+                            power["watts"], summary.get("active_workers", 0),
+                            summary.get("projects", 0))
+                        _notify("Heavy battery draw", msg)
+                        _ALERT["draw"] = True
+                else:
+                    _ALERT["draw_hits"] = 0
+                    _ALERT["draw"] = False
         except Exception:
             pass
         time.sleep(60)
@@ -646,19 +756,173 @@ def get_insights():
     return data
 
 
+_EMPTY_INSIGHTS = {
+    "today": {"rate": None, "runtime_h": None,
+              "on_battery_h": 0.0, "charging_h": 0.0},
+    "week": {"rate": None, "runtime_h": None,
+             "on_battery_h": 0.0, "charging_h": 0.0},
+    "charges": 0,
+    "wakes": 0,
+    "ok": False,
+}
+_SLOW_CACHE_SCHEMA = 1
+_SLOW_REFRESH_INTERVAL = 300
+_SLOW_RETRY_INTERVAL = 60
+_SLOW_LOCK = threading.Lock()
+
+
+def _slow_cache_file():
+    return os.path.join(DATA_DIR, "insights-cache.json")
+
+
+def _new_slow_snapshot():
+    return {
+        "wakes": 0,
+        "insights": json.loads(json.dumps(_EMPTY_INSIGHTS)),
+        "saved_at": 0.0,
+        "refreshed_at": 0.0,
+        "last_attempt": 0.0,
+        "refreshing": False,
+        # A disk snapshot is useful immediately but remains stale until this
+        # process completes its first background refresh.
+        "fresh": False,
+        "last_error": None,
+    }
+
+
+def _load_slow_snapshot():
+    snapshot = _new_slow_snapshot()
+    try:
+        with open(_slow_cache_file(), encoding="utf-8") as handle:
+            cached = json.load(handle)
+        if not isinstance(cached, dict) or cached.get("schema") != _SLOW_CACHE_SCHEMA:
+            return snapshot
+        wakes = cached.get("wakes")
+        insights = cached.get("insights")
+        saved_at = cached.get("saved_at")
+        if (isinstance(wakes, bool) or not isinstance(wakes, int) or wakes < 0
+                or not isinstance(insights, dict)
+                or not isinstance(insights.get("today"), dict)
+                or not isinstance(insights.get("week"), dict)
+                or not isinstance(saved_at, (int, float))):
+            return snapshot
+        snapshot.update(wakes=wakes, insights=insights,
+                        saved_at=float(saved_at))
+    except Exception:
+        pass
+    return snapshot
+
+
+_SLOW = _load_slow_snapshot()
+
+
+def _save_slow_snapshot():
+    """Atomically persist only the last complete wake/insights result."""
+    with _SLOW_LOCK:
+        payload = {
+            "schema": _SLOW_CACHE_SCHEMA,
+            "saved_at": _SLOW["saved_at"],
+            "wakes": _SLOW["wakes"],
+            "insights": _SLOW["insights"],
+        }
+    path = _slow_cache_file()
+    temp_path = "%s.%d.%d.tmp" % (path, os.getpid(), threading.get_ident())
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(temp_path, "w", encoding="utf-8") as handle:
+            json.dump(payload, handle)
+        os.replace(temp_path, path)
+    except Exception:
+        try:
+            os.unlink(temp_path)
+        except OSError:
+            pass
+
+
+def _slow_stats_snapshot():
+    with _SLOW_LOCK:
+        has_saved = _SLOW["saved_at"] > 0
+        return {
+            "wakes": _SLOW["wakes"],
+            "insights": _SLOW["insights"],
+            # Loading means there is not yet meaningful history to render.
+            # Refreshing also covers the tiny gap before the post-response
+            # worker starts, letting the first UI accurately say it is coming.
+            "insights_loading": not has_saved and not _SLOW["fresh"],
+            "insights_refreshing": bool(_SLOW["refreshing"] or not _SLOW["fresh"]),
+            "insights_stale": bool(has_saved and not _SLOW["fresh"]),
+        }
+
+
+def _refresh_slow_snapshot():
+    """Refresh expensive power-log summaries on a background thread."""
+    try:
+        wakes = get_wakes()
+        insights = get_insights()
+        finished = time.time()
+        with _SLOW_LOCK:
+            _SLOW.update(wakes=wakes, insights=insights,
+                         saved_at=finished, refreshed_at=finished,
+                         refreshing=False, fresh=True, last_error=None)
+        _save_slow_snapshot()
+        return True
+    except Exception as exc:
+        with _SLOW_LOCK:
+            _SLOW.update(refreshing=False, last_error=str(exc))
+        return False
+
+
+def start_slow_refresh(force=False):
+    """Start at most one expensive history refresh, returning whether started."""
+    now = time.time()
+    with _SLOW_LOCK:
+        if _SLOW["refreshing"]:
+            return False
+        if not force:
+            if (_SLOW["fresh"]
+                    and now - _SLOW["refreshed_at"] < _SLOW_REFRESH_INTERVAL):
+                return False
+            if (_SLOW["last_attempt"]
+                    and now - _SLOW["last_attempt"] < _SLOW_RETRY_INTERVAL):
+                return False
+        _SLOW.update(refreshing=True, last_attempt=now)
+    threading.Thread(target=_refresh_slow_snapshot,
+                     name="battery-hog-history", daemon=True).start()
+    return True
+
+
 def build_stats():
+    proc_data = get_process_data()
+    sleep = get_sleep_data()
+    slow = _slow_stats_snapshot()
+    gate = gate_snapshot()
+    gate.update({
+        "command": gate_command(),
+        "enabled": bool(_SETTINGS.get("dev", {}).get("enabled")),
+        "slots": int(_SETTINGS.get("dev", {}).get("slots", 2)),
+        "workers": int(_SETTINGS.get("dev", {}).get("workers", 2)),
+    })
     return {
         "battery": get_battery(),
         "memory": get_memory(),
-        "processes": get_processes(),
+        "processes": proc_data["processes"],
+        "workloads": proc_data["workloads"],
+        "dev_summary": proc_data["summary"],
+        "sleep_blockers": sleep["blockers"],
+        "power_policy": sleep["policy"],
+        "gate": gate,
         "lowpower": get_lowpowermode(),
         "health": get_battery_health(),
         "power": get_power(),
         "uptime": get_uptime(),
-        "wakes": get_wakes(),
-        "insights": get_insights(),
+        "wakes": slow["wakes"],
+        "insights": slow["insights"],
+        "insights_loading": slow["insights_loading"],
+        "insights_refreshing": slow["insights_refreshing"],
+        "insights_stale": slow["insights_stale"],
         "ignored": sorted(_IGNORED),
         "settings": _SETTINGS,
+        "preview": bool(os.environ.get("BATTERY_HOG_PREVIEW")),
         "ncpu": NCPU,
         "ts": int(time.time()),
     }
@@ -1114,6 +1378,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self._send(200, PAGE, "text/html; charset=utf-8")
         elif self.path.startswith("/api/stats"):
             self._send(200, json.dumps(build_stats()))
+            # Do not let the multi-second `pmset -g log` scan contend with the
+            # response that removes the launch loader. It begins only after
+            # that first fast stats payload has been written to the client.
+            start_slow_refresh()
         elif self.path.startswith("/api/history"):
             days = 10 if "range=10d" in self.path else 1
             self._send(200, json.dumps(get_history(days)))
@@ -1157,9 +1425,25 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 except (TypeError, ValueError):
                     pass
             if isinstance(p.get("menubar"), dict):
-                for k in ("percent", "watts", "time", "hog"):
+                for k in ("percent", "watts", "time", "hog", "dev"):
                     if k in p["menubar"]:
                         _SETTINGS["menubar"][k] = bool(p["menubar"][k])
+            if isinstance(p.get("dev"), dict):
+                incoming = p["dev"]
+                for key in ("enabled", "notify_draw"):
+                    if key in incoming:
+                        _SETTINGS["dev"][key] = bool(incoming[key])
+                for key, lo, hi in (("slots", 1, 4), ("workers", 1, 8),
+                                    ("draw_threshold", 10, 80)):
+                    if key in incoming:
+                        try:
+                            _SETTINGS["dev"][key] = max(lo, min(hi, int(incoming[key])))
+                        except (TypeError, ValueError):
+                            pass
+            if isinstance(p.get("heat"), dict):
+                enabled = p["heat"].get("enabled")
+                if isinstance(enabled, bool):
+                    _SETTINGS["heat"]["enabled"] = enabled
             _save_settings()
             self._send(200, json.dumps({"ok": True, "settings": _SETTINGS}))
         else:
