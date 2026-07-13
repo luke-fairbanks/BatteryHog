@@ -73,25 +73,6 @@ private func drawPulseArrow(y: CGFloat) {
     arrow.stroke()
 }
 
-private func drawBrandMark() {
-    let markRect = NSRect(x: 264, y: 31, width: 20, height: 20)
-    NSColor(hex: 0xcaff58).setFill()
-    NSBezierPath(roundedRect: markRect, xRadius: 6, yRadius: 6).fill()
-
-    let pulse = NSBezierPath()
-    pulse.move(to: NSPoint(x: 269, y: 41))
-    pulse.line(to: NSPoint(x: 272, y: 41))
-    pulse.line(to: NSPoint(x: 274, y: 36))
-    pulse.line(to: NSPoint(x: 277, y: 46))
-    pulse.line(to: NSPoint(x: 279, y: 41))
-    pulse.line(to: NSPoint(x: 282, y: 41))
-    pulse.lineCapStyle = .round
-    pulse.lineJoinStyle = .round
-    NSColor(hex: 0x18200f).setStroke()
-    pulse.lineWidth = 1.65
-    pulse.stroke()
-}
-
 private func drawLabelPlate(x: CGFloat, width: CGFloat) {
     let rect = NSRect(x: x, y: 298, width: width, height: 32)
     let plate = NSBezierPath(roundedRect: rect, xRadius: 11, yRadius: 11)
@@ -153,39 +134,21 @@ for x in [170.0, 510.0] {
 drawLabelPlate(x: 105, width: 130)
 drawLabelPlate(x: 445, width: 130)
 
-drawBrandMark()
-let mono = NSFont.monospacedSystemFont(ofSize: 10, weight: .semibold)
-let brandAttributes: [NSAttributedString.Key: Any] = [
-    .font: mono,
-    .foregroundColor: NSColor(hex: 0xcaff58),
-    .kern: 1.35,
-]
-NSAttributedString(string: "BATTERY HOG / INSTALL", attributes: brandAttributes)
-    .draw(at: NSPoint(x: 293, y: 34))
-
 drawCentered(
     "Drag Battery Hog to Applications",
-    y: 72,
+    y: 56,
     font: NSFont.systemFont(ofSize: 27, weight: .semibold),
     color: NSColor(hex: 0xf5f8ef),
     tracking: -0.45
 )
 drawCentered(
     "Then launch it from Spotlight or Launchpad.",
-    y: 109,
+    y: 94,
     font: NSFont.systemFont(ofSize: 13, weight: .regular),
     color: NSColor(hex: 0xf5f8ef, alpha: 0.58)
 )
 
 drawPulseArrow(y: 236)
-
-drawCentered(
-    "SIGNED & NOTARIZED   •   100% LOCAL",
-    y: 366,
-    font: NSFont.monospacedSystemFont(ofSize: 9, weight: .medium),
-    color: NSColor(hex: 0xf5f8ef, alpha: 0.38),
-    tracking: 0.85
-)
 
 image.unlockFocus()
 

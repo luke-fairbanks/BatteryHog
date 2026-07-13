@@ -41,16 +41,17 @@ class DmgPackagingContractTests(unittest.TestCase):
     def test_artwork_matches_the_current_battery_hog_visual_language(self):
         for required in (
             'NSSize(width: 680, height: 420)',
-            '"BATTERY HOG / INSTALL"',
             '"Drag Battery Hog to Applications"',
             '"Then launch it from Spotlight or Launchpad."',
-            '"SIGNED & NOTARIZED   •   100% LOCAL"',
             'NSColor(hex: 0xcaff58)',
             'drawLabelPlate(x: 105, width: 130)',
             'drawLabelPlate(x: 445, width: 130)',
         ):
             with self.subTest(required=required):
                 self.assertIn(required, self.artwork)
+
+        self.assertNotIn("BATTERY HOG / INSTALL", self.artwork)
+        self.assertNotIn("SIGNED & NOTARIZED", self.artwork)
 
 
 if __name__ == "__main__":
