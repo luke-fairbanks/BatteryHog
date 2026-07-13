@@ -669,7 +669,7 @@
   }
 
   /* Current overview */
-  #page-overview.active .page-title:after{content:" / live";font:650 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;color:var(--accent-text);vertical-align:middle;margin-left:9px;text-transform:uppercase}
+  #page-overview .overview-page-head{min-height:30px;padding:0}
   .current-stage-grid{display:grid;grid-template-columns:minmax(0,1.58fr) minmax(270px,.82fr);gap:14px;margin-bottom:14px}
   .current-energy{
     --charge:0%;--energy-color:var(--accent);
@@ -967,15 +967,7 @@
 
     <!-- OVERVIEW -->
     <section class="page active" id="page-overview" role="tabpanel" aria-labelledby="tab-overview" tabindex="0">
-      <div class="page-head">
-        <div class="ph-left">
-          <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></div>
-          <div>
-            <div class="page-title">Now</div>
-            <div class="page-sub">Your Mac, in motion</div>
-          </div>
-        </div>
-      </div>
+      <div class="page-head overview-page-head" aria-hidden="true"></div>
 
       <div class="page-scroll current-overview">
         <div class="current-stage-grid">
