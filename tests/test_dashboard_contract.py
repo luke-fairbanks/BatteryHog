@@ -265,6 +265,23 @@ class DashboardContractTests(unittest.TestCase):
         self.assertEqual(toast.get("role"), "status")
         self.assertEqual(toast.get("aria-live"), "polite")
 
+    def test_battery_level_rail_and_threshold_row_keep_polished_layout_contracts(self):
+        self.assertNotIn("charge horizon", self.html.lower())
+        self.assertRegex(
+            self.html,
+            r'class="current-energy-rail"\s*>\s*<span>Empty</span>'
+            r'\s*<span>Battery level</span>\s*<span>Full</span>',
+        )
+        self.assertRegex(
+            self.html,
+            r'class="set-row set-row-threshold"[^>]*>.*?id="thrRange"',
+        )
+        self.assertRegex(self.css, r"\.current-energy:after\s*\{\s*content:none")
+        self.assertRegex(
+            self.css,
+            r"\.set-row-threshold\s*\{[^}]*flex-direction:column",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

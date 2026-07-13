@@ -556,8 +556,8 @@
     --track:rgba(31,36,29,.10);
     --hover:rgba(31,36,29,.045);
     --chart-surface:rgba(31,36,29,.035);
-    --shadow:0 1px 0 rgba(255,255,255,.58),0 8px 24px rgba(29,32,26,.045);
-    --shadow-hover:0 1px 0 rgba(255,255,255,.66),0 10px 28px rgba(29,32,26,.065);
+    --shadow:0 8px 24px rgba(29,32,26,.045);
+    --shadow-hover:0 10px 28px rgba(29,32,26,.065);
     --canvas-deep:#151a15;
     --canvas-deep-2:#202820;
     --on-deep:#f5f8ef;
@@ -586,15 +586,15 @@
       --track:rgba(235,241,229,.10);
       --hover:rgba(235,241,229,.055);
       --chart-surface:rgba(0,0,0,.22);
-      --shadow:0 1px 0 rgba(255,255,255,.025),0 12px 34px rgba(0,0,0,.18);
-      --shadow-hover:0 1px 0 rgba(255,255,255,.035),0 14px 38px rgba(0,0,0,.22);
+      --shadow:0 12px 34px rgba(0,0,0,.18);
+      --shadow-hover:0 14px 38px rgba(0,0,0,.22);
       --canvas-deep:#111711;
       --canvas-deep-2:#1b241b;
     }
   }
 
   body{font-size:13px;letter-spacing:-.002em;background:transparent}
-  .shell{display:grid;grid-template-columns:192px minmax(0,1fr);gap:0;padding:10px 10px 10px 0}
+  .shell{display:grid;grid-template-columns:192px minmax(0,1fr);gap:0;padding:0}
   .sidebar{width:auto;padding:0 12px 2px;min-width:0}
   .drag-strip{height:42px}
   .brand{gap:8px;padding:4px 8px 22px;min-width:0}
@@ -628,9 +628,9 @@
   .side-foot .row .dot{width:6px;height:6px;background:var(--accent);box-shadow:0 0 0 4px rgba(191,243,71,.10)}
 
   .content{
-    border:1px solid var(--line);border-radius:var(--radius-shell);
+    border:0;border-left:1px solid var(--line);border-radius:0;
     background:var(--content-bg);
-    box-shadow:0 18px 54px rgba(21,25,20,.10),inset 0 1px rgba(255,255,255,.22);
+    box-shadow:none;
   }
   .content::-webkit-scrollbar{display:block;width:8px}
   .content::-webkit-scrollbar-track{background:transparent}
@@ -640,7 +640,7 @@
   @keyframes current-enter{from{opacity:0;transform:translateY(6px) scale(.997)}to{opacity:1;transform:none}}
   .page-head{
     min-height:92px;padding:24px 0 20px;
-    background:var(--content-bg);box-shadow:0 1px 0 var(--line);
+    background:var(--content-bg);box-shadow:none;
   }
   .ph-left{gap:0}
   .ph-icon{display:none}
@@ -680,14 +680,11 @@
     box-shadow:0 14px 34px rgba(12,17,12,.16);
   }
   .current-energy:before{
-    content:"";position:absolute;z-index:-1;inset:auto 0 0 0;height:42%;opacity:.25;
-    background:linear-gradient(90deg,var(--energy-color) 0 var(--charge),transparent var(--charge) 100%);
-    filter:blur(32px);transform:translateY(38%);transition:background .8s var(--ease-current),opacity .4s ease;
+    content:"";position:absolute;z-index:-1;inset:auto 0 0 0;height:55%;opacity:.12;
+    background:radial-gradient(ellipse at 34% 100%,var(--energy-color),transparent 66%);
+    filter:blur(36px);transform:translateY(32%);transition:background .8s var(--ease-current),opacity .4s ease;
   }
-  .current-energy:after{
-    content:"";position:absolute;z-index:-1;left:26px;right:26px;bottom:25px;height:1px;
-    background:linear-gradient(90deg,var(--energy-color) 0 var(--charge),rgba(255,255,255,.12) var(--charge) 100%);
-  }
+  .current-energy:after{content:none}
   .current-energy .hero-top{grid-column:1/-1;margin-bottom:24px}
   .current-energy .sec-title{color:var(--on-deep-muted)}
   .current-forecast{grid-column:1;grid-row:2;min-width:0;align-self:start;overflow:hidden}
@@ -701,7 +698,10 @@
   .current-charge .unit{font:600 9.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--on-deep-muted);margin-top:7px}
   .current-charge-glyph{display:flex;justify-content:flex-end;color:var(--energy-color);margin-bottom:9px}
   .current-charge-glyph svg{width:22px;height:22px}
-  .current-energy-rail{position:static;grid-column:1/-1;grid-row:3;display:flex;justify-content:space-between;margin-top:28px;color:var(--on-deep-muted);font:600 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase}
+  .current-energy-rail{position:relative;grid-column:1/-1;grid-row:3;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-top:28px;padding-top:15px;color:var(--on-deep-muted);font:600 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase}
+  .current-energy-rail:before{content:"";position:absolute;inset:0 0 auto;height:3px;border-radius:99px;background:linear-gradient(90deg,var(--energy-color) 0 var(--charge),rgba(255,255,255,.12) var(--charge) 100%)}
+  .current-energy-rail span:nth-child(2){justify-self:center}
+  .current-energy-rail span:last-child{justify-self:end}
   #batSvg{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
   #batRing{transition:stroke-dashoffset .8s var(--ease-current)}
 
@@ -824,14 +824,21 @@
   .ins-grid{gap:10px}
   .ins-tile{min-height:112px;border-radius:var(--radius-card)}
   .ins-tile-v{font-size:29px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:-.02em}
-  #page-settings .page-scroll{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);gap:16px;align-items:start}
+  #page-settings .page-scroll{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
   #page-settings .page-scroll>.card{margin:0}
   #page-settings .page-scroll>.card:first-child{grid-column:auto;display:block}
   #page-settings .page-scroll>.card:first-child>.sec-title,#page-settings .set-preview{margin:0}
   #page-settings .page-scroll>.card:first-child>.set-rows{display:flex}
   .set-preview{align-self:start;flex-direction:row;align-items:center;justify-content:space-between;margin:10px 0 16px;padding:10px 0 14px;border-bottom:1px solid var(--line)}
   .set-mb{padding:9px 13px;border-radius:10px;background:var(--canvas-deep);color:var(--on-deep)}
-  .set-row{padding:14px 0}
+  .set-rows{gap:2px}
+  .set-row{padding:12px 10px;margin:0 -10px;border-top:0;border-radius:10px}
+  .set-row:hover{background:var(--hover)}
+  .set-row-t{flex:1;min-width:0}
+  .set-row-sub{line-height:1.4;overflow-wrap:anywhere}
+  .set-row-threshold{flex-direction:column;align-items:stretch;gap:12px}
+  .set-row-threshold .set-thr{display:grid;grid-template-columns:minmax(0,1fr) 42px;gap:12px;width:100%}
+  .set-row-threshold .set-thr input[type=range]{width:100%;min-width:0}
 
   /* Current loader: one calm electrical pulse */
   .loading-screen{padding:28px 30px;background:var(--content-bg)}
@@ -993,7 +1000,7 @@
               <circle class="ring-bg" cx="94" cy="94" r="80" fill="none" stroke-width="15"/>
               <circle class="ring-fg" id="batRing" cx="94" cy="94" r="80" fill="none" stroke-width="15" stroke-linecap="round" stroke-dasharray="502.65" stroke-dashoffset="502.65" stroke="var(--green)"/>
             </svg>
-            <div class="current-energy-rail"><span>0</span><span>charge horizon</span><span>100</span></div>
+            <div class="current-energy-rail"><span>Empty</span><span>Battery level</span><span>Full</span></div>
           </div>
 
           <div class="card current-cause" id="currentCause">
@@ -1299,7 +1306,7 @@
           <div class="set-rows">
             <div class="set-row" data-set="alerts"><div class="set-row-t"><div class="set-row-title">Battery &amp; usage alerts</div><div class="set-row-sub">Low battery, full charge, CPU spikes and sustained high draw</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
             <div class="set-row" data-set="heat"><div class="set-row-t"><div class="set-row-title">Heat alerts</div><div class="set-row-sub">notify when thermal pressure rises, with the likely process or development workload causing it</div></div><div class="switch" role="switch" aria-checked="false" aria-label="Heat alerts" tabindex="0"><span class="knob"></span></div></div>
-            <div class="set-row"><div class="set-row-t"><div class="set-row-title">Low-battery alert at</div><div class="set-row-sub">notify when battery drops to this level</div></div><div class="set-thr"><input type="range" id="thrRange" min="5" max="50" step="5" value="20"><span class="set-thr-v" id="thrVal">20%</span></div></div>
+            <div class="set-row set-row-threshold"><div class="set-row-t"><div class="set-row-title">Low-battery alert at</div><div class="set-row-sub">notify when battery drops to this level</div></div><div class="set-thr"><input type="range" id="thrRange" min="5" max="50" step="5" value="20"><span class="set-thr-v" id="thrVal">20%</span></div></div>
           </div>
         </div>
       </div>
