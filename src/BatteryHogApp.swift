@@ -177,7 +177,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     // MARK: window
 
     func buildWindow() {
-        let frame = NSRect(x: 0, y: 0, width: 1120, height: 760)
+        // Give the dashboard enough room to keep its information hierarchy calm,
+        // while still collapsing cleanly on smaller MacBook displays. A new
+        // autosave key below prevents a cramped frame saved by the previous shell
+        // from being restored over this layout on first launch.
+        let frame = NSRect(x: 0, y: 0, width: 1200, height: 800)
 
         // JS→native bridge so empty areas of the web UI can drag the window.
         // (WKWebView swallows mouse events, so isMovableByWindowBackground and the
@@ -198,7 +202,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         cfg.setURLSchemeHandler(iconHandler, forURLScheme: "appicon")
 
         webView = WKWebView(frame: frame, configuration: cfg)
-        webView.setValue(false, forKey: "drawsBackground")   // transparent so vibrancy shows through the sidebar
+        // The web canvas stays transparent so the native material is visible only
+        // where the HTML sidebar is transparent. The HTML content pane paints its
+        // own opaque, appearance-aware surface over the rest of the window.
+        webView.setValue(false, forKey: "drawsBackground")
         webView.autoresizingMask = [.width, .height]
         webView.uiDelegate = self                            // so JS confirm()/alert() show native panels
 
@@ -208,7 +215,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let vibrancy = NSVisualEffectView(frame: frame)
         vibrancy.material = .sidebar
         vibrancy.blendingMode = .behindWindow
-        vibrancy.state = .active
+        vibrancy.state = .followsWindowActiveState
+        vibrancy.appearance = nil                           // resolve graphite correctly in light and dark mode
         vibrancy.autoresizingMask = [.width, .height]
         vibrancy.addSubview(webView)
 
@@ -216,16 +224,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                           styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                           backing: .buffered, defer: false)
         window.title = "Battery Hog"
+        window.appearance = nil                              // inherit the user's Aqua appearance
         window.titlebarAppearsTransparent = true            // content extends under the titlebar
         window.titleVisibility = .hidden
-        window.isMovableByWindowBackground = true            // drag the window from any empty area
+        window.titlebarSeparatorStyle = .none
+        // WKWebView owns pointer handling. Keep dragging limited to the explicit
+        // page-head / drag-strip / brand bridge above so controls never become
+        // accidental titlebar drag targets.
+        window.isMovableByWindowBackground = false
         window.isOpaque = false                              // let the vibrancy show the real desktop
-        window.backgroundColor = .clear                      // (true translucent "liquid glass" sidebar)
-        window.minSize = NSSize(width: 840, height: 560)
+        window.backgroundColor = .clear
+        window.hasShadow = true
+        window.tabbingMode = .disallowed
+        window.contentMinSize = NSSize(width: 920, height: 620)
         window.contentView = vibrancy
         window.center()
         window.isReleasedWhenClosed = false
-        window.setFrameAutosaveName("BatteryHogWindow3")
+        window.setFrameAutosaveName("BatteryHogCurrentWindow1")
         window.makeKeyAndOrderFront(nil)
     }
 
@@ -243,9 +258,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                     }
                 } else {
                     self.webView.loadHTMLString(
-                        "<body style='font-family:-apple-system;background:#0e1116;color:#e6e9ef;padding:40px'>"
-                        + "<h2>Couldn't start the battery monitor.</h2>"
-                        + "<p>Make sure python3 is available, then reopen Battery Hog.</p></body>",
+                        """
+                        <meta name='color-scheme' content='light dark'>
+                        <style>
+                          :root { color-scheme: light dark; }
+                          body { margin:0; padding:40px; font-family:-apple-system;
+                                 background:Canvas; color:CanvasText; }
+                          p { color:color-mix(in srgb, CanvasText 65%, transparent); }
+                        </style>
+                        <h2>Couldn't start the battery monitor.</h2>
+                        <p>Make sure python3 is available, then reopen Battery Hog.</p>
+                        """,
                         baseURL: nil)
                 }
             }

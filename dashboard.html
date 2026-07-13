@@ -526,6 +526,340 @@
   .btn:focus-visible,.seg button:focus-visible,.link-btn:focus-visible,.btn-primary:focus-visible,.nav-item:focus-visible{
     outline:2px solid var(--accent);outline-offset:2px;
   }
+
+  /* ================================================================
+     CURRENT — a quiet electrical instrument
+     ================================================================ */
+  :root{
+    color-scheme:light dark;
+    --accent:#bff347;
+    --accent-press:#a9de2c;
+    --accent-text:#527600;
+    --accent-soft:rgba(159,215,36,.16);
+    --green:#62d989;
+    --amber:#f5a93f;
+    --red:#f2635b;
+    --teal:#4bcbd2;
+    --red-text:#c53d36;
+    --content-bg:#f0eee7;
+    --card:#fbfaf5;
+    --card-2:#f7f5ef;
+    --line:rgba(23,27,22,.09);
+    --line-strong:rgba(23,27,22,.16);
+    --txt:#171a16;
+    --txt-2:rgba(31,36,29,.68);
+    --txt-label:rgba(31,36,29,.57);
+    --txt-3:rgba(31,36,29,.43);
+    --seg-inactive:rgba(31,36,29,.62);
+    --sel:rgba(191,243,71,.18);
+    --sel-active:#bff347;
+    --track:rgba(31,36,29,.10);
+    --hover:rgba(31,36,29,.045);
+    --chart-surface:rgba(31,36,29,.035);
+    --shadow:0 1px 0 rgba(255,255,255,.65),0 12px 32px rgba(29,32,26,.055);
+    --shadow-hover:0 1px 0 rgba(255,255,255,.72),0 14px 34px rgba(29,32,26,.075);
+    --canvas-deep:#151a15;
+    --canvas-deep-2:#202820;
+    --on-deep:#f5f8ef;
+    --on-deep-muted:rgba(245,248,239,.62);
+    --ease-current:cubic-bezier(.2,.9,.2,1);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --accent:#caff58;
+      --accent-press:#d7ff7b;
+      --accent-text:#caff58;
+      --accent-soft:rgba(202,255,88,.13);
+      --content-bg:#090c0a;
+      --card:#121713;
+      --card-2:#0f1410;
+      --line:rgba(232,240,226,.085);
+      --line-strong:rgba(232,240,226,.15);
+      --txt:#f2f5ed;
+      --txt-2:rgba(235,241,229,.68);
+      --txt-label:rgba(235,241,229,.57);
+      --txt-3:rgba(235,241,229,.40);
+      --seg-inactive:rgba(235,241,229,.62);
+      --sel:rgba(202,255,88,.12);
+      --track:rgba(235,241,229,.10);
+      --hover:rgba(235,241,229,.055);
+      --chart-surface:rgba(0,0,0,.22);
+      --shadow:0 1px 0 rgba(255,255,255,.025),0 20px 50px rgba(0,0,0,.22);
+      --shadow-hover:0 1px 0 rgba(255,255,255,.035),0 22px 54px rgba(0,0,0,.27);
+      --canvas-deep:#111711;
+      --canvas-deep-2:#1b241b;
+    }
+  }
+
+  body{font-size:13px;letter-spacing:-.002em;background:transparent}
+  .shell{display:grid;grid-template-columns:192px minmax(0,1fr);gap:0;padding:10px 10px 10px 0}
+  .sidebar{width:auto;padding:0 12px 2px;min-width:0}
+  .drag-strip{height:42px}
+  .brand{gap:10px;padding:4px 8px 22px}
+  .brand .logo{
+    width:30px;height:30px;border-radius:10px;
+    background:var(--accent);color:#18200f;
+    box-shadow:0 8px 22px rgba(150,205,30,.24),inset 0 0 0 1px rgba(255,255,255,.35);
+    transform:rotate(-2deg);
+  }
+  .brand .logo svg{width:17px;height:17px;stroke-width:2.5}
+  .brand .name{font-size:15px;font-weight:760;letter-spacing:-.025em}
+  .nav{gap:5px}
+  .nav-label{padding:2px 9px 7px;font:700 9.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.11em;color:var(--txt-3)}
+  .nav-item{
+    position:relative;min-height:38px;gap:10px;padding:8px 10px;border-radius:11px;
+    font-size:13px;font-weight:630;letter-spacing:-.01em;overflow:hidden;
+    transition:background .18s ease,color .18s ease,transform .18s var(--ease-current);
+  }
+  .nav-item:before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:4px;background:var(--accent);transform:scaleY(0);transition:transform .2s var(--ease-current)}
+  .nav-item:hover{transform:translateX(2px)}
+  .nav-item.active{background:var(--sel);color:var(--txt)}
+  .nav-item.active:before{transform:scaleY(1)}
+  .nav-item.active .ico{color:var(--accent-text)}
+  .nav-item .ico{width:20px;height:20px}
+  .nav-item .ico svg{width:17px;height:17px}
+  .nav-item .badge{font:650 10.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--txt-3)}
+  .side-foot{padding:13px 8px 2px;border-top:1px solid var(--line);gap:8px}
+  .side-foot .row{font-size:10.5px;font-weight:570}
+  .side-foot .row:first-child{display:inline-flex;align-self:flex-start;padding:5px 8px;border-radius:99px;background:var(--accent-soft);color:var(--txt-2)}
+  .side-foot .row .dot{width:6px;height:6px;background:var(--accent);box-shadow:0 0 0 4px rgba(191,243,71,.10)}
+
+  .content{
+    border:1px solid var(--line);border-radius:24px;
+    background:var(--content-bg);
+    box-shadow:0 24px 70px rgba(21,25,20,.12),inset 0 1px rgba(255,255,255,.24);
+  }
+  .page{max-width:1180px;padding:0 30px 38px}
+  .page.active{animation:current-enter .22s var(--ease-current)}
+  @keyframes current-enter{from{opacity:0;transform:translateY(6px) scale(.997)}to{opacity:1;transform:none}}
+  .page-head{
+    min-height:92px;padding:24px 0 20px;
+    background:linear-gradient(to bottom,var(--content-bg) 74%,transparent);
+  }
+  .ph-left{gap:0}
+  .ph-icon{display:none}
+  .page-title{font-size:29px;font-weight:760;letter-spacing:-.045em}
+  .page-sub{font-size:12.5px;margin-top:4px;color:var(--txt-2)}
+  .card{
+    border-color:var(--line);border-radius:18px;
+    background:var(--card);box-shadow:var(--shadow);
+    transition:border-color .2s ease,background .3s ease,box-shadow .2s ease;
+  }
+  .card:hover{box-shadow:var(--shadow)}
+  .card:hover:not(.table-card){transform:none}
+  .card-pad{padding:19px 21px}
+  .sec-title,.dev-kicker{
+    font:720 10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;
+    text-transform:uppercase;letter-spacing:.105em;color:var(--txt-label);
+  }
+  .pill{padding:4px 9px;border-radius:99px;font-size:10.5px;font-weight:720}
+  .pill.normal,.pill.charging{background:rgba(98,217,137,.14);color:#237b43}
+  .pill.elevated{background:rgba(245,169,63,.15);color:#975d0b}
+  .pill.high{background:rgba(242,99,91,.14);color:#b43b35}
+  .pill.charged,.pill.ac{background:var(--accent-soft);color:var(--accent-text)}
+  @media (prefers-color-scheme:dark){
+    .pill.normal,.pill.charging{color:#7ce29d}.pill.elevated{color:#ffc16b}.pill.high{color:#ff817a}
+    .pill.charged,.pill.ac{color:var(--accent)}
+  }
+
+  /* Current overview */
+  #page-overview.active .page-title:after{content:" / live";font:650 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;color:var(--accent-text);vertical-align:middle;margin-left:9px;text-transform:uppercase}
+  .current-stage-grid{display:grid;grid-template-columns:minmax(0,1.58fr) minmax(270px,.82fr);gap:14px;margin-bottom:14px}
+  .current-energy{
+    --charge:0%;--energy-color:var(--accent);
+    position:relative;isolation:isolate;min-height:304px;padding:24px 26px 22px;overflow:hidden;
+    color:var(--on-deep);border-color:rgba(255,255,255,.08)!important;
+    background:linear-gradient(145deg,var(--canvas-deep),var(--canvas-deep-2))!important;
+    box-shadow:0 22px 48px rgba(12,17,12,.20);
+  }
+  .current-energy:before{
+    content:"";position:absolute;z-index:-1;inset:auto 0 0 0;height:42%;opacity:.25;
+    background:linear-gradient(90deg,var(--energy-color) 0 var(--charge),transparent var(--charge) 100%);
+    filter:blur(32px);transform:translateY(38%);transition:background .8s var(--ease-current),opacity .4s ease;
+  }
+  .current-energy:after{
+    content:"";position:absolute;z-index:-1;left:26px;right:26px;bottom:25px;height:1px;
+    background:linear-gradient(90deg,var(--energy-color) 0 var(--charge),rgba(255,255,255,.12) var(--charge) 100%);
+    box-shadow:calc((100% - 52px) * .01) 0 0 transparent;
+  }
+  .current-energy .hero-top{margin-bottom:28px}
+  .current-energy .sec-title{color:var(--on-deep-muted)}
+  .current-forecast{max-width:76%}
+  .current-forecast-label{font-size:12px;color:var(--on-deep-muted);font-weight:580;margin-bottom:5px}
+  .current-forecast-value{font-size:60px;line-height:.98;font-weight:780;letter-spacing:-.065em;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .current-energy-meta{display:flex;align-items:center;gap:11px;margin-top:14px;color:var(--on-deep-muted);font-size:12px;font-weight:570}
+  .current-energy-meta .divider{width:3px;height:3px;border-radius:50%;background:var(--energy-color)}
+  .current-charge{position:absolute;right:26px;top:88px;text-align:right}
+  .current-charge .big{font-size:40px;line-height:1;font-weight:760;letter-spacing:-.05em;color:var(--on-deep);font-variant-numeric:tabular-nums}
+  .current-charge .big small{font-size:18px;font-weight:650;color:var(--on-deep-muted)}
+  .current-charge .unit{font:650 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--on-deep-muted);margin-top:7px}
+  .current-charge-glyph{display:flex;justify-content:flex-end;color:var(--energy-color);margin-bottom:9px}
+  .current-charge-glyph svg{width:22px;height:22px}
+  .current-energy-rail{position:absolute;left:26px;right:26px;bottom:18px;display:flex;justify-content:space-between;color:var(--on-deep-muted);font:600 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase}
+  #batSvg{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+  #batRing{transition:stroke-dashoffset .8s var(--ease-current)}
+
+  .current-cause{min-height:304px;padding:22px;display:flex;flex-direction:column;overflow:hidden;position:relative}
+  .current-cause:after{content:"";position:absolute;right:-65px;bottom:-70px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,var(--accent-soft),transparent 68%);pointer-events:none}
+  .current-cause-top{display:flex;align-items:center;justify-content:space-between}
+  .current-cause-body{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;flex:1;min-height:0;padding:22px 0 15px;position:relative;z-index:1}
+  .current-cause-icon{width:46px;height:46px;margin-bottom:15px}
+  .current-cause-icon .app-ico{width:46px!important;height:46px!important;font-size:16px!important}
+  .current-cause-icon .app-ico:not(.img){border-radius:14px}
+  .current-cause-title{font-size:23px;line-height:1.08;font-weight:745;letter-spacing:-.04em;max-width:270px}
+  .current-cause-copy{font-size:12px;line-height:1.48;color:var(--txt-2);margin-top:8px;max-width:280px}
+  .current-cause-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;position:relative;z-index:1}
+  .current-cause-meta{font:600 10px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--txt-3);text-transform:uppercase;letter-spacing:.05em}
+
+  .current-pulse{padding:17px 20px 13px;margin-bottom:14px;overflow:hidden}
+  .current-pulse-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:8px}
+  .current-pulse-copy{font-size:11px;color:var(--txt-2);margin-top:4px}
+  .current-pulse-stats{display:flex;gap:20px;text-align:right}
+  .current-pulse-stat b{display:block;font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+  .current-pulse-stat span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt-3);margin-top:4px}
+  #powerTrace{display:block;width:100%;height:78px;overflow:visible}
+  .current-trace-line{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 2px 5px rgba(150,205,30,.25))}
+
+  .current-telemetry{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+  .telemetry-cell{min-height:116px;padding:16px 17px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+  .telemetry-cell:before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:2px;border-radius:5px;background:var(--signal,var(--accent))}
+  .telemetry-label{font:690 9.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--txt-3)}
+  .telemetry-value{font-size:24px;line-height:1;font-weight:740;letter-spacing:-.045em;font-variant-numeric:tabular-nums;margin-top:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .telemetry-value small{font-size:13px;color:var(--txt-2);font-weight:620}
+  .telemetry-sub{font-size:10.5px;color:var(--txt-2);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #memCard{--signal:var(--teal);background:var(--card)!important}
+  #memCard .hero-top{margin:0}
+  #memCard .mem-gauge,#memCard .mem-detail{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
+  #memCard .mem-readout{text-align:left;margin:0}
+  #memCard .mem-readout .big{font-size:24px;margin-top:12px}
+  #memCard .mem-readout .lbl{font-size:10.5px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:6px}
+  .current-lowpower{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px;padding:13px 16px;border-style:dashed}
+  .current-lowpower-copy{display:flex;align-items:center;gap:11px;min-width:0}
+  .current-lowpower-mark{width:30px;height:30px;border-radius:9px;background:var(--accent);color:#18200f;display:grid;place-items:center;flex-shrink:0}
+  .current-lowpower-mark svg{width:15px;height:15px}
+  .current-lowpower-title{font-size:12.5px;font-weight:680}
+  .current-lowpower-sub{font-size:10.5px;color:var(--txt-2);margin-top:2px}
+  .current-lower{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(300px,.92fr);gap:14px}
+  .current-lower .sg-card{margin:0}
+  .current-top-card{padding:19px 21px}
+  .current-top-card .mini-row{padding:10px 7px}
+  .current-top-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  #page-overview .sg-item{padding:10px 8px}
+
+  /* Controls and cross-page components */
+  .btn{border-radius:9px;background:transparent;padding:6px 12px;font-size:11.5px}
+  .btn:hover{background:var(--hover);border-color:var(--line-strong)}
+  .link-btn{color:var(--accent-text);font-size:11.5px;border-radius:8px}
+  .seg{border-radius:11px;padding:3px;background:var(--track)}
+  .seg button{border-radius:8px;padding:6px 13px;font-size:11px}
+  .seg button.on{background:var(--card);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+  .switch{width:44px;height:26px;border-radius:26px}
+  .switch .knob{width:22px;height:22px}
+  .switch[aria-checked="true"]{background:var(--accent)}
+  .switch[aria-checked="true"] .knob{transform:translateX(18px)}
+  .toast{left:calc(50% + 96px);border:1px solid rgba(255,255,255,.12);background:rgba(20,25,20,.94);border-radius:12px}
+
+  /* Processes: contribution ledger, not spreadsheet */
+  .table-card{border-radius:18px;max-height:calc(100vh - 134px);background:transparent;box-shadow:none;border:none;gap:5px}
+  .table-card .pthead{background:transparent;border:0;padding:8px 17px;color:var(--txt-3)}
+  .pthead,.prow{grid-template-columns:28px 2.2fr 1.1fr 1fr 1.1fr 80px}
+  .pthead>*:nth-child(n+3),.prow>*:nth-child(n+3){border-left:none}
+  .prow{position:relative;border:1px solid var(--line)!important;border-radius:13px;padding:11px 16px;background:var(--card);overflow:hidden;transition:transform .2s var(--ease-current),border-color .2s ease,background .2s ease}
+  .prow:hover{background:var(--card);border-color:var(--line-strong)!important;transform:translateX(2px)}
+  .prow:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--row-signal,var(--accent));opacity:.75}
+  .metric-cell .mb{height:4px}
+  .metric-cell .mv{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px}
+  .pname-cell .nm .t{font-size:12.5px;font-weight:670}
+
+  /* Workloads */
+  .dev-hero{padding:26px 27px;border-color:rgba(255,255,255,.07);background:linear-gradient(145deg,var(--canvas-deep),var(--canvas-deep-2));color:var(--on-deep);box-shadow:0 20px 45px rgba(12,17,12,.18)}
+  .dev-hero:before{left:auto;right:-65px;top:-110px;width:320px;height:320px;background:radial-gradient(circle,rgba(191,243,71,.22),transparent 67%)}
+  .dev-hero .dev-kicker,.dev-hero .dev-summary-copy,.dev-hero .dev-reading span{color:var(--on-deep-muted)}
+  .dev-reading strong{font-size:58px;letter-spacing:-.06em}
+  .dev-metric{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.08);border-radius:12px}
+  .dev-metric span{color:var(--on-deep-muted)}
+  .work-row{border-top-color:var(--line);padding:14px 3px}
+  .work-glyph{background:var(--accent-soft);color:var(--accent-text);border-radius:12px}
+  .dev-mode-ico{background:var(--accent);color:#18200f;border-radius:12px}
+  .gate-command{border-radius:11px}
+  .sleep-notice{border-radius:12px}
+
+  /* Battery, insights, settings */
+  #chartCard{border-radius:20px;padding:20px 22px 15px}
+  .hist-seg{max-width:310px;margin-left:auto}
+  .hist-title{font-size:24px;letter-spacing:-.035em}
+  #healthCard{background:linear-gradient(145deg,var(--canvas-deep),var(--canvas-deep-2))!important;color:var(--on-deep);border-color:rgba(255,255,255,.07);min-height:190px}
+  #healthCard .sec-title,#healthCard .foot{color:var(--on-deep-muted)}
+  #healthCard .stat .value{font-size:62px;letter-spacing:-.06em}
+  #insHero{position:relative;overflow:hidden;padding:25px 26px;background:linear-gradient(145deg,var(--canvas-deep),var(--canvas-deep-2));color:var(--on-deep);border-color:rgba(255,255,255,.07)}
+  #insHero:after{content:"";position:absolute;right:-60px;top:-80px;width:250px;height:250px;border-radius:50%;background:radial-gradient(circle,rgba(191,243,71,.18),transparent 68%)}
+  #insHero .sec-title,#insHero .foot{color:var(--on-deep-muted)}
+  .ins-big{font-size:56px;letter-spacing:-.055em}
+  #insHero .ins-big small{color:var(--on-deep-muted)}
+  .ins-grid{gap:10px}
+  .ins-tile{min-height:112px;border-radius:15px}
+  .ins-tile-v{font-size:29px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:-.04em}
+  #page-settings .page-scroll{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  #page-settings .page-scroll>.card{margin:0}
+  #page-settings .page-scroll>.card:first-child{grid-column:1/-1;display:grid;grid-template-columns:minmax(190px,.5fr) 1.5fr;gap:22px}
+  #page-settings .page-scroll>.card:first-child>.sec-title,#page-settings .set-preview{grid-column:1;margin:0}
+  #page-settings .page-scroll>.card:first-child>.set-rows{grid-column:2;grid-row:1/3}
+  .set-preview{align-self:start;flex-direction:column;align-items:flex-start}
+  .set-mb{padding:9px 13px;border-radius:10px;background:var(--canvas-deep);color:var(--on-deep)}
+  .set-row{padding:14px 0}
+
+  /* Current loader: one calm electrical pulse */
+  .loading-screen{padding:28px 30px;background:var(--content-bg)}
+  .loading-head{margin-bottom:26px}
+  .loading-spinner{position:relative;width:42px;height:42px;border-radius:13px;background:var(--canvas-deep);color:var(--accent);box-shadow:none;overflow:hidden}
+  .loading-spinner:after{width:24px;height:2px;border:0;border-radius:3px;background:var(--accent);box-shadow:0 0 14px rgba(191,243,71,.55);animation:current-loader 1.35s ease-in-out infinite}
+  .loading-title{font-size:27px;letter-spacing:-.04em}
+  .loading-card{border-radius:18px;box-shadow:none;background:var(--card)}
+  .skel{background:var(--track);animation:skeleton-pulse 1.35s ease-in-out infinite}
+  @keyframes current-loader{0%,100%{transform:translateX(-8px);opacity:.45}50%{transform:translateX(8px);opacity:1}}
+
+  @media (max-width:1080px){
+    .current-stage-grid{grid-template-columns:minmax(0,1.35fr) minmax(250px,.75fr)}
+    .current-forecast-value{font-size:52px}
+    .current-telemetry{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media (max-width:920px){
+    .shell{grid-template-columns:72px minmax(0,1fr)}
+    .sidebar{padding:0 8px 2px}
+    .brand{justify-content:center;padding:4px 0 20px}
+    .brand .name,.preview-badge,.nav-label,.nav-item>:not(.ico),.side-foot .row span,.side-foot .row:nth-child(2){display:none!important}
+    .nav-item{justify-content:center;padding:8px;overflow:visible}
+    .nav-item:before{left:1px}
+    .nav-item:hover{transform:none}
+    .nav-item .ico{width:22px;height:22px}
+    .side-foot{align-items:center;padding-inline:0}
+    .side-foot .row:first-child{padding:7px}
+    .page{padding-inline:22px}
+    .page-head{min-height:82px;padding-top:20px}
+    .current-stage-grid,.current-lower{grid-template-columns:1fr}
+    .current-energy,.current-cause{min-height:270px}
+    .current-cause{min-height:225px}
+    .current-cause-body{padding:16px 0 10px}
+    .current-cause-title{max-width:440px}
+    .dev-layout{grid-template-columns:1fr}
+    #page-settings .page-scroll{grid-template-columns:1fr}
+    #page-settings .page-scroll>.card:first-child{grid-column:auto;display:block}
+    #page-settings .page-scroll>.card:first-child>.set-rows{display:flex}
+    #page-settings .set-preview{margin:8px 0 16px;flex-direction:row;align-items:center}
+    .pthead,.prow{grid-template-columns:26px 2fr .95fr .95fr 72px}
+    .pthead>*:nth-child(5),.prow>*:nth-child(5){display:none}
+  }
+  @media (max-width:720px){
+    .current-forecast-value{font-size:45px}
+    .current-charge{top:92px}
+    .current-charge .big{font-size:32px}
+    .dev-hero-top{display:block}.dev-metrics{margin-top:20px;min-width:0}
+    .ins-grid{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .page.active,.nav-item,.prow,.current-energy:before,.loading-spinner:after,.skel{animation:none!important;transition:none!important}
+    .side-foot .dot{box-shadow:none}
+  }
 </style>
 </head>
 <body>
@@ -541,31 +875,31 @@
     </div>
     <nav class="nav" role="tablist" aria-label="Sections">
       <div class="nav-label" id="navLabel">Monitor</div>
-      <button type="button" class="nav-item active" data-room="overview" role="tab" aria-selected="true" aria-controls="page-overview" id="tab-overview">
+      <button type="button" class="nav-item active" data-room="overview" role="tab" aria-selected="true" aria-controls="page-overview" id="tab-overview" title="Now">
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>
-        Overview
+        <span class="nav-text">Now</span>
       </button>
-      <button type="button" class="nav-item" data-room="processes" role="tab" aria-selected="false" aria-controls="page-processes" id="tab-processes">
+      <button type="button" class="nav-item" data-room="processes" role="tab" aria-selected="false" aria-controls="page-processes" id="tab-processes" title="Apps">
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.2"/><circle cx="4" cy="12" r="1.2"/><circle cx="4" cy="18" r="1.2"/></svg></span>
-        Processes
+        <span class="nav-text">Apps</span>
         <span class="badge" id="navProcCount">—</span>
       </button>
-      <button type="button" class="nav-item" data-room="workloads" role="tab" aria-selected="false" aria-controls="page-workloads" id="tab-workloads">
+      <button type="button" class="nav-item" data-room="workloads" role="tab" aria-selected="false" aria-controls="page-workloads" id="tab-workloads" title="Workloads">
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="m7 9 3 3-3 3"/><path d="M12 15h5"/></svg></span>
-        Workloads
+        <span class="nav-text">Workloads</span>
         <span class="badge" id="navWorkCount">—</span>
       </button>
-      <button type="button" class="nav-item" data-room="health" role="tab" aria-selected="false" aria-controls="page-health" id="tab-health">
+      <button type="button" class="nav-item" data-room="health" role="tab" aria-selected="false" aria-controls="page-health" id="tab-health" title="Battery">
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8" width="15" height="9" rx="2.2"/><path d="M20 11.5v2"/></svg></span>
-        Battery
+        <span class="nav-text">Battery</span>
       </button>
-      <button type="button" class="nav-item" data-room="insights" role="tab" aria-selected="false" aria-controls="page-insights" id="tab-insights">
+      <button type="button" class="nav-item" data-room="insights" role="tab" aria-selected="false" aria-controls="page-insights" id="tab-insights" title="Insights">
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 13l3.5-3.5 3 3L21 6"/></svg></span>
-        Insights
+        <span class="nav-text">Insights</span>
       </button>
-      <button type="button" class="nav-item" data-room="settings" role="tab" aria-selected="false" aria-controls="page-settings" id="tab-settings">
+      <button type="button" class="nav-item" data-room="settings" role="tab" aria-selected="false" aria-controls="page-settings" id="tab-settings" title="Settings">
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
-        Settings
+        <span class="nav-text">Settings</span>
       </button>
     </nav>
     <div class="side-foot">
@@ -597,104 +931,108 @@
         <div class="ph-left">
           <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></div>
           <div>
-            <div class="page-title">Overview</div>
-            <div class="page-sub">Your Mac at a glance</div>
+            <div class="page-title">Now</div>
+            <div class="page-sub">Your Mac, in motion</div>
           </div>
         </div>
       </div>
 
-      <div class="page-scroll">
-      <div class="card card-pad sg-card" id="sgCard">
-        <div class="sg-head">
-          <div class="sec-title" style="margin-bottom:0">Suggestions</div>
-          <button class="sg-bell" id="alertToggle" type="button" aria-pressed="false" title="Get notified about low battery, CPU spikes & full charge">
-            <span class="sg-bell-ico"></span><span id="alertLbl">Alerts off</span>
-          </button>
-        </div>
-        <div class="sg-list" id="sgList"></div>
-      </div>
-      <div class="grid-hero">
-        <!-- Battery hero -->
-        <div class="card hero-card" id="battCard">
-          <div class="hero-top">
-            <div class="sec-title" style="margin-bottom:0">Battery</div>
-            <span id="batState"><span class="pill discharging">—</span></span>
-          </div>
-          <div class="ring-wrap">
-            <div class="ring">
-              <svg width="188" height="188" viewBox="0 0 188 188" role="img" id="batSvg" aria-label="Battery status">
-                <circle class="ring-bg" cx="94" cy="94" r="80" fill="none" stroke-width="15"/>
-                <circle class="ring-fg" id="batRing" cx="94" cy="94" r="80" fill="none" stroke-width="15" stroke-linecap="round" stroke-dasharray="502.65" stroke-dashoffset="502.65" stroke="var(--green)"/>
-              </svg>
-              <div class="ring-center">
-                <div class="ring-glyph" id="batGlyph"></div>
-                <div class="big" id="batPct">—</div>
-                <div class="unit" id="batUnit">battery</div>
+      <div class="page-scroll current-overview">
+        <div class="current-stage-grid">
+          <div class="card current-energy" id="battCard">
+            <div class="hero-top">
+              <div class="sec-title">Energy forecast</div>
+              <span id="batState"><span class="pill discharging">—</span></span>
+            </div>
+            <div class="current-forecast">
+              <div class="current-forecast-label" id="batTimeK">Time remaining</div>
+              <div class="current-forecast-value"><span id="batTime">—</span><span id="batForecastSuffix"></span></div>
+              <div class="current-energy-meta">
+                <span id="batSource">—</span><span class="divider"></span>
+                <span><span id="batPowerK">Power draw</span> <strong id="batPower">—</strong></span>
               </div>
             </div>
-            <div class="ring-meta">
-              <div class="kv"><span class="k">Power source</span><span class="v" id="batSource">—</span></div>
-              <div class="kv"><span class="k" id="batTimeK">Time remaining</span><span class="v" id="batTime">—</span></div>
-              <div class="kv"><span class="k" id="batPowerK">Power draw</span><span class="v" id="batPower">—</span></div>
+            <div class="current-charge">
+              <div class="current-charge-glyph" id="batGlyph"></div>
+              <div class="big" id="batPct">—</div>
+              <div class="unit" id="batUnit">battery</div>
             </div>
-          </div>
-        </div>
-
-        <!-- Memory pressure arc -->
-        <div class="card card-pad" id="memCard">
-          <div class="hero-top"><div class="sec-title" style="margin-bottom:0">Memory</div><span id="memPressure"><span class="pill normal">—</span></span></div>
-          <div class="mem-gauge">
-            <svg width="188" height="108" viewBox="0 0 188 108" role="img" id="memSvg" aria-label="Memory usage">
-              <path d="M14 100 A80 80 0 0 1 174 100" fill="none" stroke="var(--track)" stroke-width="14" stroke-linecap="round"/>
-              <path class="mem-arc-fg" id="memArc" d="M14 100 A80 80 0 0 1 174 100" fill="none" stroke="var(--accent)" stroke-width="14" stroke-linecap="round" stroke-dasharray="251.3" stroke-dashoffset="251.3"/>
+            <svg width="188" height="188" viewBox="0 0 188 188" role="img" id="batSvg" aria-label="Battery status">
+              <circle class="ring-bg" cx="94" cy="94" r="80" fill="none" stroke-width="15"/>
+              <circle class="ring-fg" id="batRing" cx="94" cy="94" r="80" fill="none" stroke-width="15" stroke-linecap="round" stroke-dasharray="502.65" stroke-dashoffset="502.65" stroke="var(--green)"/>
             </svg>
+            <div class="current-energy-rail"><span>0</span><span>charge horizon</span><span>100</span></div>
           </div>
-          <div class="mem-readout">
-            <div class="big" id="memBig">—</div>
-            <div class="lbl" id="memLbl">used of —</div>
-          </div>
-          <div class="mem-detail">
-            <div class="row"><span>Compressed</span><span id="memComp">—</span></div>
-            <div class="row"><span>Wired</span><span id="memWired">—</span></div>
-            <div class="row"><span>Free</span><span id="memFree">—</span></div>
-            <div class="row"><span>Swap</span><span id="memSwap">—</span></div>
-          </div>
-        </div>
-      </div>
 
-      <div class="grid-2">
-        <!-- Top energy users -->
-        <div class="card card-pad">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div class="sec-title" style="margin-bottom:0">Top energy users</div>
-            <button class="link-btn" data-jump="processes">See all</button>
-          </div>
-          <div class="mini-list" id="topUsers"></div>
-        </div>
-
-        <!-- Low power + quick stats -->
-        <div style="display:flex;flex-direction:column;gap:16px">
-          <div class="card">
-            <div class="lpm">
-              <div class="lpm-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div>
-              <div class="lpm-txt">
-                <div class="lpm-t">Low Power Mode</div>
-                <div class="lpm-d" id="lpmDesc">Reduce energy use to extend battery life</div>
-              </div>
-              <div class="switch" id="lpmSwitch" role="switch" aria-checked="false" aria-label="Low Power Mode" tabindex="0"><span class="knob"></span></div>
+          <div class="card current-cause" id="currentCause">
+            <div class="current-cause-top"><div class="sec-title">What is driving it</div><span id="causeSignal" class="pill normal">Live</span></div>
+            <div class="current-cause-body">
+              <div class="current-cause-icon" id="currentCauseIcon"></div>
+              <div class="current-cause-title" id="currentCauseTitle">Watching your Mac</div>
+              <div class="current-cause-copy" id="currentCauseCopy">The strongest contributor will appear here.</div>
             </div>
-          </div>
-          <div class="card card-pad" style="flex:1">
-            <div class="sec-title">Quick stats</div>
-            <div class="mem-detail" style="margin-top:0;padding-top:0;border-top:none;grid-template-columns:1fr;gap:11px">
-              <div class="row"><span>CPU cores</span><span id="qsCores">—</span></div>
-              <div class="row"><span>Active apps</span><span id="qsApps">—</span></div>
-              <div class="row"><span>Total memory</span><span id="qsRam">—</span></div>
-              <div class="row"><span>Last sample</span><span id="qsTs">—</span></div>
+            <div class="current-cause-foot">
+              <span class="current-cause-meta" id="currentCauseMeta">Sampling</span>
+              <button class="link-btn" id="currentCauseAction" data-jump="processes">Open Apps</button>
             </div>
           </div>
         </div>
-      </div>
+
+        <div class="card current-pulse">
+          <div class="current-pulse-head">
+            <div><div class="sec-title">Power current · 90 seconds</div><div class="current-pulse-copy" id="powerTraceSummary">Building a live trace from five-second samples</div></div>
+            <div class="current-pulse-stats">
+              <div class="current-pulse-stat"><b id="powerTraceNow">—</b><span>Now</span></div>
+              <div class="current-pulse-stat"><b id="powerTracePeak">—</b><span>Peak</span></div>
+              <div class="current-pulse-stat"><b id="qsTs">—</b><span>Sample</span></div>
+            </div>
+          </div>
+          <svg id="powerTrace" viewBox="0 0 900 78" preserveAspectRatio="none" role="img" aria-label="Power draw over the last 90 seconds"></svg>
+        </div>
+
+        <div class="current-telemetry">
+          <div class="card telemetry-cell" id="memCard">
+            <div class="hero-top"><div class="telemetry-label">Memory pressure</div><span id="memPressure"><span class="pill normal">—</span></span></div>
+            <div class="mem-readout"><div class="big telemetry-value" id="memBig">—</div><div class="lbl telemetry-sub" id="memLbl">used of —</div></div>
+            <div class="mem-gauge"><svg width="188" height="108" viewBox="0 0 188 108" role="img" id="memSvg" aria-label="Memory usage"><path d="M14 100 A80 80 0 0 1 174 100" fill="none" stroke="var(--track)" stroke-width="14" stroke-linecap="round"/><path class="mem-arc-fg" id="memArc" d="M14 100 A80 80 0 0 1 174 100" fill="none" stroke="var(--accent)" stroke-width="14" stroke-linecap="round" stroke-dasharray="251.3" stroke-dashoffset="251.3"/></svg></div>
+            <div class="mem-detail"><span id="memComp">—</span><span id="memWired">—</span><span id="memFree">—</span><span id="memSwap">—</span></div>
+            <span class="sr-only" id="qsRam">—</span>
+          </div>
+          <div class="card telemetry-cell" style="--signal:var(--accent)">
+            <div class="telemetry-label">Active apps</div>
+            <div><div class="telemetry-value" id="qsApps">—</div><div class="telemetry-sub"><span id="qsCores">—</span> CPU cores available</div></div>
+          </div>
+          <div class="card telemetry-cell" style="--signal:#a88bff">
+            <div class="telemetry-label">Development</div>
+            <div><div class="telemetry-value" id="telemetryDev">—</div><div class="telemetry-sub" id="telemetryWorkers">Watching for active projects</div></div>
+          </div>
+          <div class="card telemetry-cell" style="--signal:var(--amber)">
+            <div class="telemetry-label">Top app now</div>
+            <div><div class="telemetry-value" id="telemetryTopApp">—</div><div class="telemetry-sub" id="telemetryTopCpu">No notable draw</div></div>
+          </div>
+        </div>
+
+        <div class="card current-lowpower">
+          <div class="current-lowpower-copy">
+            <div class="current-lowpower-mark"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div>
+            <div><div class="current-lowpower-title">Low Power Mode</div><div class="current-lowpower-sub" id="lpmDesc">Reduce energy use to extend battery life</div></div>
+          </div>
+          <div class="switch" id="lpmSwitch" role="switch" aria-checked="false" aria-label="Low Power Mode" tabindex="0"><span class="knob"></span></div>
+        </div>
+
+        <div class="current-lower">
+          <div class="card card-pad sg-card" id="sgCard">
+            <div class="sg-head">
+              <div><div class="sec-title">Observations</div></div>
+              <button class="sg-bell" id="alertToggle" type="button" aria-pressed="false" title="Get notified about low battery, CPU spikes & full charge"><span class="sg-bell-ico"></span><span id="alertLbl">Alerts off</span></button>
+            </div>
+            <div class="sg-list" id="sgList"></div>
+          </div>
+          <div class="card current-top-card">
+            <div class="current-top-head"><div class="sec-title">Energy leaders</div><button class="link-btn" data-jump="processes">Open Apps</button></div>
+            <div class="mini-list" id="topUsers"></div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -704,7 +1042,7 @@
         <div class="ph-left">
           <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.2"/><circle cx="4" cy="12" r="1.2"/><circle cx="4" cy="18" r="1.2"/></svg></div>
           <div>
-            <div class="page-title">Processes</div>
+            <div class="page-title">Apps</div>
             <div class="page-sub" id="prSub">Ranked by impact</div>
           </div>
         </div>
@@ -946,7 +1284,7 @@ const BAT_C=2*Math.PI*80;      // battery ring circumference
 const MEM_C=251.3;             // semicircle arc length (pi * 80)
 const SCAN_C=2*Math.PI*74;     // scan orb circumference
 
-let state={ data:null, room:"overview", sort:"score", lastTs:null, energy:null, measuring:false, statsInFlight:false, pendingMute:new Set(), pendingUnmute:false, pendingSettings:{} };
+let state={ data:null, room:"overview", sort:"score", lastTs:null, energy:null, measuring:false, statsInFlight:false, powerHistory:[], pendingMute:new Set(), pendingUnmute:false, pendingSettings:{} };
 
 /* ---------- helpers ---------- */
 function fmtGB(g){ return (g==null)?"—":(g>=10?g.toFixed(1):g.toFixed(2))+" GB"; }
@@ -970,6 +1308,88 @@ function appIconHTML(p,px){
   return `<span class="app-ico" style="background:${appColor(p.name)};width:${px}px;height:${px}px;font-size:${Math.round(px*0.4)}px">${esc(initials(p.name))}</span>`;
 }
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+
+function recordPowerSample(d){
+  const power=d.power||{}, battery=d.battery||{};
+  const ts=Number(d.ts)||Date.now()/1000;
+  const watts=power.watts==null?null:Math.max(0,Number(power.watts)||0);
+  const threshold=Number((((d.settings||{}).dev||{}).draw_threshold)||30);
+  const sample={ts,watts,onAC:!!battery.on_ac,high:!battery.on_ac&&watts!=null&&watts>=threshold,threshold};
+  const last=state.powerHistory[state.powerHistory.length-1];
+  if(last&&Math.abs(last.ts-ts)<1) state.powerHistory[state.powerHistory.length-1]=sample;
+  else state.powerHistory.push(sample);
+  if(state.powerHistory.length>18) state.powerHistory.splice(0,state.powerHistory.length-18);
+}
+
+function renderPowerTrace(){
+  const svg=$("#powerTrace"); if(!svg) return;
+  const samples=state.powerHistory, values=samples.filter(s=>s.watts!=null);
+  const now=values.length?values[values.length-1].watts:null;
+  const peak=values.length?Math.max(...values.map(s=>s.watts)):null;
+  $("#powerTraceNow").textContent=now==null?"—":now.toFixed(1)+" W";
+  $("#powerTracePeak").textContent=peak==null?"—":peak.toFixed(1)+" W";
+  if(!values.length){
+    svg.innerHTML='<text x="450" y="43" text-anchor="middle" style="fill:var(--txt-3);font:600 11px -apple-system,system-ui">Waiting for a power sample</text>';
+    return;
+  }
+  const W=900,H=78,pad=5,threshold=values[values.length-1].threshold||30;
+  const scaleMax=Math.max(12,peak||0,threshold)*1.16;
+  const x=i=>samples.length===1?W-pad:pad+i*(W-pad*2)/(samples.length-1);
+  const y=v=>H-pad-(Math.max(0,v||0)/scaleMax)*(H-pad*2);
+  const pts=samples.map((s,i)=>({x:x(i),y:y(s.watts),s}));
+  const line=pts.map((p,i)=>(i?"L":"M")+p.x.toFixed(1)+","+p.y.toFixed(1)).join(" ");
+  const area=line+` L${pts[pts.length-1].x.toFixed(1)},${H-pad} L${pts[0].x.toFixed(1)},${H-pad} Z`;
+  const ty=y(threshold);
+  let markers="";
+  pts.forEach((p,i)=>{
+    if(p.s.high) markers+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.2" fill="var(--amber)" stroke="var(--card)" stroke-width="1.5"/>`;
+    if(i&&p.s.onAC!==pts[i-1].s.onAC) markers+=`<line x1="${p.x.toFixed(1)}" y1="4" x2="${p.x.toFixed(1)}" y2="74" stroke="var(--teal)" stroke-width="1" stroke-dasharray="3 4" opacity=".72"/><circle cx="${p.x.toFixed(1)}" cy="8" r="3" fill="var(--teal)"/>`;
+  });
+  svg.innerHTML=`<defs><linearGradient id="currentTraceArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".24"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs><line x1="0" y1="${ty.toFixed(1)}" x2="900" y2="${ty.toFixed(1)}" stroke="var(--amber)" stroke-width="1" stroke-dasharray="3 5" opacity=".35"/><path d="${area}" fill="url(#currentTraceArea)"/><path class="current-trace-line" d="${line}"/>${markers}<circle cx="${pts[pts.length-1].x.toFixed(1)}" cy="${pts[pts.length-1].y.toFixed(1)}" r="4.2" fill="var(--accent)" stroke="var(--card)" stroke-width="2"/>`;
+  const elapsed=samples.length>1?Math.max(0,Math.round(samples[samples.length-1].ts-samples[0].ts)):0;
+  const high=samples.filter(s=>s.high).length, transitions=samples.slice(1).filter((s,i)=>s.onAC!==samples[i].onAC).length;
+  let summary=samples.length<18?`${samples.length} of 18 samples · building ${elapsed||5}s of history`:`Rolling ${Math.min(90,elapsed)}s current`;
+  if(high) summary+=` · ${high} high-draw sample${high===1?"":"s"} above ${threshold} W`;
+  else if(transitions) summary+=` · adapter transition marked in cyan`;
+  else if(samples[samples.length-1].onAC) summary+=` · currently on adapter`;
+  else summary+=` · below your ${threshold} W mobile threshold`;
+  $("#powerTraceSummary").textContent=summary;
+  svg.setAttribute("aria-label",`Power draw now ${now==null?"unknown":now.toFixed(1)+" watts"}; peak ${peak==null?"unknown":peak.toFixed(1)+" watts"}`);
+}
+
+function renderCurrentSummary(){
+  const d=state.data||{}, procs=(d.processes||[]).filter(p=>!p.protected), dev=d.dev_summary||{};
+  const top=procs.slice().sort((a,b)=>(b.score||0)-(a.score||0))[0];
+  const devDominant=(dev.projects||0)>0&&((dev.cpu||0)>=(top?top.cpu||0:0)||(dev.heavy_workers||0)>0);
+  const ico=$("#currentCauseIcon"), title=$("#currentCauseTitle"), copy=$("#currentCauseCopy"), meta=$("#currentCauseMeta"), action=$("#currentCauseAction"), signal=$("#causeSignal");
+  if(devDominant){
+    ico.innerHTML='<span class="work-glyph" style="width:46px;height:46px">&gt;_</span>';
+    const projects=dev.projects||0, workers=dev.active_workers||dev.workers||0;
+    title.textContent=projects+" dev project"+(projects===1?" is":"s are")+" pulling together";
+    copy.textContent=workers+" active worker"+(workers===1?"":"s")+" are using "+Math.round(dev.cpu||0)+"% combined CPU. Agent Mode can coordinate heavy jobs without closing your tools.";
+    meta.textContent=(dev.heavy_workers||0)+" heavy · "+Math.round(dev.cpu||0)+"% cpu";
+    action.textContent="Open Workloads"; action.dataset.jump="workloads";
+    const level=dev.level||"low"; signal.className="pill "+(level==="high"?"high":level==="med"?"elevated":"normal"); signal.textContent=level==="high"?"Heavy":level==="med"?"Active":"Light";
+  }else if(top){
+    ico.innerHTML=appIconHTML(top,46);
+    title.textContent=top.name+" is working hardest";
+    copy.textContent="It is using "+Math.round(top.cpu||0)+"% CPU and "+fmtMem(top.mem_mb)+" of memory in the latest sample.";
+    meta.textContent=levelLabel(top.level)+" impact · "+Math.round(top.cpu||0)+"% cpu";
+    action.textContent="Open Apps"; action.dataset.jump="processes";
+    signal.className="pill "+(top.level==="high"?"high":top.level==="med"?"elevated":"normal"); signal.textContent=levelLabel(top.level)+" impact";
+  }else{
+    ico.innerHTML='<span class="work-glyph" style="width:46px;height:46px">✓</span>';
+    title.textContent="Your Mac is running quietly";
+    copy.textContent="Nothing stands out as a meaningful battery contributor in this sample.";
+    meta.textContent="No notable draw"; action.textContent="Open Apps"; action.dataset.jump="processes";
+    signal.className="pill normal"; signal.textContent="Calm";
+  }
+  const projects=Number(dev.projects)||0, workers=Number(dev.active_workers||dev.workers)||0;
+  $("#telemetryDev").textContent=projects+" project"+(projects===1?"":"s");
+  $("#telemetryWorkers").textContent=workers?workers+" active worker"+(workers===1?"":"s"):"No heavy jobs detected";
+  $("#telemetryTopApp").textContent=top?top.name:"Quiet";
+  $("#telemetryTopCpu").textContent=top?Math.round(top.cpu||0)+"% CPU · "+levelLabel(top.level)+" impact":"No notable draw";
+}
 const boltSVG='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>';
 const checkSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
 const battSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2"/><path d="M20 10v4"/></svg>';
@@ -998,6 +1418,12 @@ $$(".nav-item").forEach(it=>{
   it.addEventListener("click",()=>go(it.dataset.room));
   it.addEventListener("keydown",e=>{
     if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(it.dataset.room); }
+    if(["ArrowDown","ArrowRight","ArrowUp","ArrowLeft","Home","End"].includes(e.key)){
+      e.preventDefault();
+      const items=[...$$(".nav-item")], here=items.indexOf(it);
+      const next=e.key==="Home"?0:e.key==="End"?items.length-1:(here+((e.key==="ArrowDown"||e.key==="ArrowRight")?1:-1)+items.length)%items.length;
+      items[next].focus(); go(items[next].dataset.room);
+    }
   });
 });
 document.addEventListener("click",e=>{ const j=e.target.closest("[data-jump]"); if(j) go(j.dataset.jump); });
@@ -1090,7 +1516,7 @@ async function fetchStats(){
   try{
     const r=await fetch("/api/stats",{cache:"no-store"});
     const d=await r.json();
-    state.data=d; state.lastTs=Date.now();
+    state.data=d; state.lastTs=Date.now(); recordPowerSample(d);
     // drop optimistic mutes the server has now confirmed; keep the rest
     const srv=new Set(d.ignored||[]);
     state.pendingMute.forEach(n=>{ if(srv.has(n)) state.pendingMute.delete(n); });
@@ -1124,7 +1550,7 @@ async function fetchStats(){
 function render(){
   const d=state.data; if(!d) return;
   document.body.classList.toggle("preview",!!d.preview);
-  renderBattery(); renderMemory(); renderLowPower(); renderTopUsers(); renderProcesses(); renderQuick(); renderWorkloads(); renderSleepBlockers(); renderHealth(); renderSuggestions(); renderSettings(); renderInsights();
+  renderBattery(); renderMemory(); renderLowPower(); renderTopUsers(); renderProcesses(); renderQuick(); renderWorkloads(); renderSleepBlockers(); renderHealth(); renderSuggestions(); renderSettings(); renderInsights(); renderCurrentSummary(); renderPowerTrace();
   $("#navProcCount").textContent=d.processes? d.processes.length : "—";
   $("#navWorkCount").textContent=(d.dev_summary&&d.dev_summary.projects!=null)?d.dev_summary.projects:"—";
   $("#coresLabel").textContent=(d.ncpu??"—")+" cores";
@@ -1148,6 +1574,8 @@ function renderBattery(){
     $("#batTime").textContent="—";
     $("#batPowerK").textContent="Power draw"; $("#batPower").textContent="—";
     $("#batSvg").setAttribute("aria-label","No battery detected");
+    const card=$("#battCard"); if(card){card.style.setProperty("--charge","0%");card.style.setProperty("--energy-color","var(--txt-3)");}
+    $("#batForecastSuffix").textContent="";
     return;
   }
   const pct=Math.round(b.percent);
@@ -1164,7 +1592,7 @@ function renderBattery(){
   ring.style.stroke=col;
   ring.style.filter="drop-shadow(0 1px 5px "+glow+")";
   const _bc=document.getElementById("battCard");
-  if(_bc) _bc.style.background="radial-gradient(115% 80% at 50% -12%,"+tint+",transparent 60%),linear-gradient(180deg,var(--card),var(--card-2))";
+  if(_bc){ _bc.style.setProperty("--charge",pct+"%"); _bc.style.setProperty("--energy-color",col); }
   ring.style.strokeDashoffset=BAT_C*(1-pct/100);
   glyph.innerHTML = st==="charging"?boltSVG : st==="charged"?checkSVG : battSVG;
   const stMap={charging:"Charging",charged:"Charged",discharging:"On battery",ac:"Plugged in"};
@@ -1174,8 +1602,8 @@ function renderBattery(){
   const pillClass=low?"high":st;
   $("#batState").innerHTML=`<span class="pill ${pillClass}">${stIco}${stText}</span>`;
   $("#batSource").textContent=b.on_ac?"Power adapter":"Battery";
-  if(b.time && (st==="charging"||st==="discharging")){ $("#batTimeK").textContent=st==="charging"?"Until full":"Time remaining"; $("#batTime").textContent=b.time; }
-  else{ $("#batTimeK").textContent="Status"; $("#batTime").textContent= st==="charged"?"Fully charged":st==="ac"?"Not charging":st==="charging"?"Charging…":"Calculating…"; }
+  if(b.time && (st==="charging"||st==="discharging")){ $("#batTimeK").textContent=st==="charging"?"Charge forecast":"Energy forecast"; $("#batTime").textContent=b.time; $("#batForecastSuffix").textContent=st==="charging"?" until full":" left"; }
+  else{ $("#batTimeK").textContent="Current state"; $("#batTime").textContent= st==="charged"?"Fully charged":st==="ac"?"On adapter":st==="charging"?"Charging…":"Calculating…"; $("#batForecastSuffix").textContent=""; }
   const pw=state.data.power||{};
   if(pw.watts!=null){
     if(pw.direction==="charging"){ $("#batPowerK").textContent="Charging at"; $("#batPower").textContent=pw.watts.toFixed(1)+" W"; }
@@ -1196,9 +1624,8 @@ function renderMemory(){
   const glow=m.pressure==="high"?"rgba(255,69,58,.4)":m.pressure==="elevated"?"rgba(255,159,10,.4)":"rgba(10,132,255,.35)";
   arc.style.stroke=col;
   arc.style.filter="drop-shadow(0 1px 4px "+glow+")";
-  const tint=m.pressure==="high"?"rgba(255,69,58,.17)":m.pressure==="elevated"?"rgba(255,159,10,.16)":"rgba(48,209,88,.15)";
   const _mc=document.getElementById("memCard");
-  if(_mc) _mc.style.background="radial-gradient(115% 80% at 50% -12%,"+tint+",transparent 60%),linear-gradient(180deg,var(--card),var(--card-2))";
+  if(_mc) _mc.style.setProperty("--signal",col);
   $("#memBig").innerHTML=Math.round(frac*100)+'<small>%</small>';
   $("#memLbl").textContent=fmtGB(used)+" used of "+fmtGB(total);
   const pr=m.pressure||"normal";
@@ -1588,6 +2015,7 @@ function procRowStructure(p){
 }
 function updateProcRow(el,p,i,maxCpu,maxMem,maxScore){
   const scCol=colorAt(p.level);
+  el.style.setProperty("--row-signal",scCol);
   const rk=el.querySelector(".rank"); rk.textContent=i+1; rk.style.color=i<3?scCol:"var(--txt-2)";
   el.querySelector(".nm .s").textContent=p.procs>1?p.procs+" processes":"1 process";
   const ii=el.querySelector(".m-imp i"); ii.style.width=Math.max(3,Math.round((p.score||0)/maxScore*100))+"%"; ii.style.background=scCol;
