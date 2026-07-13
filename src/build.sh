@@ -1,16 +1,18 @@
 #!/bin/bash
 # Builds "Battery Hog.app" from the sources in this folder.
-set -e
+set -euo pipefail
 cd "$(dirname "$0")"
 
 ROOT="$(cd .. && pwd)"
+source "$ROOT/src/version.sh"
+SPARKLE_ROOT="$(bash "$ROOT/src/fetch_sparkle.sh")"
 APP="$ROOT/Battery Hog.app"
 C="$APP/Contents"
 SWIFT_TARGET="${SWIFT_TARGET:-arm64-apple-macosx11.0}"
 
 echo "==> Cleaning previous build"
 rm -rf "$APP"
-mkdir -p "$C/MacOS" "$C/Resources"
+mkdir -p "$C/MacOS" "$C/Resources" "$C/Frameworks"
 
 echo "==> Building icon (.icns)"
 swift make_icon.swift >/dev/null
@@ -33,10 +35,15 @@ fi
 
 echo "==> Compiling Swift app"
 swiftc -O -target "$SWIFT_TARGET" BatteryHogApp.swift -o "$C/MacOS/BatteryHog" \
-    -framework Cocoa -framework WebKit -framework UserNotifications
+    -F "$SPARKLE_ROOT" -framework Sparkle \
+    -framework Cocoa -framework WebKit -framework UserNotifications \
+    -Xlinker -rpath -Xlinker '@loader_path/../Frameworks'
 
 echo "==> Assembling bundle"
 cp Info.plist "$C/Info.plist"
+stamp_bundle_version "$C/Info.plist"
+ditto "$SPARKLE_ROOT/Sparkle.framework" "$C/Frameworks/Sparkle.framework"
+cp "$SPARKLE_ROOT/LICENSE" "$C/Resources/Sparkle-LICENSE.txt"
 cp "$ROOT/battery_hog.py" "$C/Resources/battery_hog.py"
 cp "$ROOT/batteryhog_workloads.py" "$C/Resources/batteryhog_workloads.py"
 cp "$ROOT/batteryhog_gate.py" "$C/Resources/batteryhog_gate.py"

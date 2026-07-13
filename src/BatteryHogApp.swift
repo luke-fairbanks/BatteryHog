@@ -1,4 +1,5 @@
 import Cocoa
+import Sparkle
 import UserNotifications
 import WebKit
 
@@ -63,6 +64,185 @@ final class IconSchemeHandler: NSObject, WKURLSchemeHandler {
     }
 }
 
+// Sparkle is intentionally isolated from the monitoring backend. It owns its
+// automatic-check preference in UserDefaults, while the dashboard talks to it
+// through a small native bridge. Homebrew-installed copies never start Sparkle.
+final class UpdateCoordinator: NSObject, SPUUpdaterDelegate {
+    static let homebrewCommand = "brew upgrade --cask luke-fairbanks/tap/battery-hog"
+
+    private weak var webView: WKWebView?
+    private let installMethod: String
+    private var updaterController: SPUStandardUpdaterController?
+    private var status = "idle"
+    private var latestVersion: String?
+    private var lastChecked: Date?
+    private var message: String?
+    private var errorMessage: String?
+
+    override init() {
+        installMethod = Self.detectInstallMethod(bundleURL: Bundle.main.bundleURL)
+        super.init()
+        if installMethod == "direct" {
+            updaterController = SPUStandardUpdaterController(
+                startingUpdater: true,
+                updaterDelegate: self,
+                userDriverDelegate: nil
+            )
+        } else {
+            status = "homebrew"
+        }
+    }
+
+    func attach(to webView: WKWebView) {
+        self.webView = webView
+        pushState()
+    }
+
+    static func detectInstallMethod(bundleURL: URL,
+                                    fileManager: FileManager = .default) -> String {
+        // Preview-only override makes both states visually testable without
+        // weakening production detection.
+        let isPreview = Bundle.main.bundleIdentifier?.hasSuffix(".preview") == true
+        if isPreview,
+           let override = ProcessInfo.processInfo.environment["BATTERY_HOG_DEBUG_INSTALL_METHOD"],
+           ["direct", "homebrew"].contains(override) {
+            return override
+        }
+
+        let installedBundle = bundleURL.resolvingSymlinksInPath().standardizedFileURL
+        let caskRoots = [
+            URL(fileURLWithPath: "/opt/homebrew/Caskroom/battery-hog", isDirectory: true),
+            URL(fileURLWithPath: "/usr/local/Caskroom/battery-hog", isDirectory: true)
+        ]
+        for caskRoot in caskRoots {
+            guard let versions = try? fileManager.contentsOfDirectory(
+                at: caskRoot, includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            ) else { continue }
+            for version in versions {
+                let caskApp = version.appendingPathComponent(bundleURL.lastPathComponent,
+                                                              isDirectory: true)
+                guard fileManager.fileExists(atPath: caskApp.path) else { continue }
+                if caskApp.resolvingSymlinksInPath().standardizedFileURL == installedBundle {
+                    return "homebrew"
+                }
+            }
+        }
+        return "direct"
+    }
+
+    func checkForUpdates() {
+        guard installMethod == "direct", let controller = updaterController else {
+            showHomebrewInstructions()
+            return
+        }
+        if latestVersion == nil {
+            status = "checking"
+            message = nil
+            errorMessage = nil
+            pushState()
+        }
+        controller.checkForUpdates(nil)
+    }
+
+    func setAutomaticChecks(_ enabled: Bool) {
+        guard installMethod == "direct", let updater = updaterController?.updater else { return }
+        updater.automaticallyChecksForUpdates = enabled
+        message = enabled ? "Automatic update checks are on." : "Automatic update checks are off."
+        errorMessage = nil
+        pushState()
+    }
+
+    func copyHomebrewCommand() {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(Self.homebrewCommand, forType: .string)
+        message = "Homebrew upgrade command copied."
+        errorMessage = nil
+        pushState()
+    }
+
+    func showHomebrewInstructions() {
+        let alert = NSAlert()
+        alert.messageText = "Updates are managed by Homebrew"
+        alert.informativeText = "Run this command in Terminal to update Battery Hog:\n\n\(Self.homebrewCommand)"
+        alert.addButton(withTitle: "Copy Command")
+        alert.addButton(withTitle: "OK")
+        if alert.runModal() == .alertFirstButtonReturn { copyHomebrewCommand() }
+    }
+
+    func pushState() {
+        guard let webView else { return }
+        let updater = updaterController?.updater
+        var payload: [String: Any] = [
+            "available": true,
+            "installMethod": installMethod,
+            "currentVersion": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString")
+                as? String ?? "Unknown",
+            "automaticChecks": installMethod == "direct"
+                ? (updater?.automaticallyChecksForUpdates ?? false) : false,
+            "canCheck": installMethod == "direct" ? (updater?.canCheckForUpdates ?? false) : false,
+            "status": status,
+            "checking": status == "checking",
+            "updateAvailable": latestVersion != nil,
+            "homebrewCommand": Self.homebrewCommand,
+            // This payload is authoritative. Explicit nulls prevent the web
+            // view from retaining details from an earlier updater state.
+            "latestVersion": NSNull(),
+            "lastChecked": NSNull(),
+            "message": NSNull(),
+            "error": NSNull()
+        ]
+        if let latestVersion { payload["latestVersion"] = latestVersion }
+        if let lastChecked {
+            payload["lastChecked"] = ISO8601DateFormatter().string(from: lastChecked)
+        }
+        if let message { payload["message"] = message }
+        if let errorMessage { payload["error"] = errorMessage }
+        guard let data = try? JSONSerialization.data(withJSONObject: payload),
+              let json = String(data: data, encoding: .utf8) else { return }
+        webView.evaluateJavaScript(
+            "window.batteryHogUpdatesDidChange && window.batteryHogUpdatesDidChange(\(json));",
+            completionHandler: nil
+        )
+    }
+
+    func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
+        status = "updateAvailable"
+        latestVersion = item.displayVersionString
+        lastChecked = Date()
+        message = "Version \(item.displayVersionString) is available."
+        errorMessage = nil
+        pushState()
+    }
+
+    func updaterDidNotFindUpdate(_ updater: SPUUpdater, error: Error) {
+        status = "noUpdate"
+        latestVersion = nil
+        lastChecked = Date()
+        let detail = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        message = detail.isEmpty ? "No update is available for this Mac." : detail
+        errorMessage = nil
+        pushState()
+    }
+
+    func updater(_ updater: SPUUpdater, didAbortWithError error: Error) {
+        // Sparkle reports "no update" through the method above; this callback
+        // is reserved for a real feed, network, signature, or install failure.
+        let sparkleError = error as NSError
+        if sparkleError.domain == SUSparkleErrorDomain,
+           sparkleError.code == SUError.noUpdateError.rawValue {
+            return
+        }
+        status = "error"
+        latestVersion = nil
+        lastChecked = Date()
+        message = nil
+        errorMessage = error.localizedDescription
+        pushState()
+    }
+}
+
 private struct HeatWorkloadObservation {
     let key: String
     let label: String
@@ -119,6 +299,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     private var heatEpisodeArmed = true
     private var heatEvaluationWorkItem: DispatchWorkItem?
     private var heatAlertsEnabled = false
+    private lazy var updateCoordinator = UpdateCoordinator()
 
     func applicationDidFinishLaunching(_ note: Notification) {
         // Read the initial value before subscribing, as recommended for
@@ -139,6 +320,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         startServer()
         buildStatusItem()
         buildWindow()
+        updateCoordinator.attach(to: webView)
         waitForServer(attempt: 0)
         NSApp.activate(ignoringOtherApps: true)
     }
@@ -189,6 +371,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let cfg = WKWebViewConfiguration()
         let ucc = WKUserContentController()
         ucc.add(self, name: "drag")
+        ucc.add(self, name: "updates")
         let dragJS = """
         document.documentElement.classList.add('native-shell');
         document.addEventListener('mousedown', function(e){
@@ -426,6 +609,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let show = NSMenuItem(title: "Open Dashboard", action: #selector(showDashboard(_:)), keyEquivalent: "")
         show.target = self
         menu.addItem(show)
+        let updates = NSMenuItem(title: "Check for Updates…",
+                                 action: #selector(checkForUpdates(_:)), keyEquivalent: "")
+        updates.target = self
+        menu.addItem(updates)
         menu.addItem(NSMenuItem(title: "Quit Battery Hog",
                                 action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
@@ -459,6 +646,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     @objc func showWorkloads(_ sender: Any?) {
         showDashboard(sender)
         webView.evaluateJavaScript("go('workloads')", completionHandler: nil)
+    }
+
+    @objc func checkForUpdates(_ sender: Any?) {
+        updateCoordinator.checkForUpdates()
     }
 
     // MARK: Heat Watch
@@ -828,6 +1019,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                                                   name: ProcessInfo.thermalStateDidChangeNotification,
                                                   object: nil)
         heatEvaluationWorkItem?.cancel()
+        webView?.configuration.userContentController.removeScriptMessageHandler(forName: "updates")
         py?.terminate()
     }
 
@@ -835,6 +1027,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         if message.name == "drag", let event = NSApp.currentEvent {
             window.performDrag(with: event)
+            return
+        }
+        guard message.name == "updates",
+              message.frameInfo.isMainFrame,
+              webView.url?.host == "127.0.0.1",
+              webView.url?.port == port,
+              let payload = message.body as? [String: Any],
+              let action = payload["action"] as? String else { return }
+        switch action {
+        case "getState":
+            updateCoordinator.pushState()
+        case "check":
+            updateCoordinator.checkForUpdates()
+        case "setAutomaticChecks":
+            if let enabled = payload["enabled"] as? Bool {
+                updateCoordinator.setAutomaticChecks(enabled)
+            }
+        case "copyHomebrewCommand":
+            updateCoordinator.copyHomebrewCommand()
+        default:
+            break
         }
     }
 
@@ -874,6 +1087,12 @@ let mainMenu = NSMenu()
 let appItem = NSMenuItem()
 mainMenu.addItem(appItem)
 let appMenu = NSMenu()
+let updateItem = NSMenuItem(title: "Check for Updates…",
+                            action: #selector(AppDelegate.checkForUpdates(_:)),
+                            keyEquivalent: "")
+updateItem.target = delegate
+appMenu.addItem(updateItem)
+appMenu.addItem(NSMenuItem.separator())
 appMenu.addItem(withTitle: "Hide Battery Hog", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
 appMenu.addItem(NSMenuItem.separator())
 appMenu.addItem(withTitle: "Quit Battery Hog", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")

@@ -5,19 +5,23 @@
 
 ![Battery Hog overview](docs/overview.png)
 
-Battery Hog is a small, fast, **100% local** menu-bar + window app for Apple Silicon Macs. It shows live battery, memory, and per-app energy use, keeps a real charge history, estimates *why* your battery drains fast, and lets you quit the worst offenders — all read straight from built-in macOS tools, with nothing sent anywhere.
+Battery Hog is a small, fast menu-bar + window app for Apple Silicon Macs. It shows live battery, memory, and per-app energy use, keeps a real charge history, estimates *why* your battery drains fast, and lets you quit the worst offenders. Monitoring stays **100% local** and is read straight from built-in macOS tools.
 
-No Electron, no dependencies: a tiny Swift/WebKit shell around a Python standard-library backend and an HTML/CSS dashboard.
+No Electron: a tiny Swift/WebKit shell around a Python standard-library backend and an HTML/CSS dashboard, with Sparkle bundled for signed, opt-in software updates.
 
 ## Download
 
-**[⬇︎ Download the latest .dmg →](https://github.com/luke-fairbanks/BatteryHog/releases/latest)** — open it and drag **Battery Hog** to Applications. Builds are signed and notarized, so it opens like any other app. (Prefer to build it yourself? See [Install](#install).)
+**[⬇︎ Download the latest .dmg →](https://github.com/luke-fairbanks/BatteryHog/releases/latest)** — open it and drag **Battery Hog** to Applications. Builds are signed and notarized, so it opens like any other app. Direct-download installs can check for signed updates in the app; periodic checks are off until you opt in. (Prefer to build it yourself? See [Install](#install).)
 
 Or with Homebrew:
 
 ```bash
 brew install --cask luke-fairbanks/tap/battery-hog
 ```
+
+Homebrew installs remain Homebrew-managed. Battery Hog detects the cask and shows the matching `brew upgrade` command instead of starting its built-in updater.
+
+Version 1.4.0 is the updater bootstrap release. Anyone coming from 1.3.1 or earlier must install it manually once; later direct-download releases can update in place.
 
 Requires macOS 11+ on Apple Silicon.
 
@@ -33,6 +37,7 @@ Requires macOS 11+ on Apple Silicon.
 - **Smart suggestions** — contextual, actionable tips (coordinate concurrent builds, release stuck sleep assertions, restart after long uptime, free RAM under pressure, plug in when low, …). Mute tips for apps you can't quit.
 - **Opt-in alerts** — native notifications for low battery, full charge, runaway-CPU apps, and sustained macOS thermal pressure with likely workload attribution.
 - **Configurable menu bar** — choose what the status item shows: battery %, watts, time remaining, and/or the top app.
+- **Signed software updates** — check manually or opt in to daily checks; Homebrew copies stay managed by Homebrew.
 
 <p align="center"><img src="docs/battery.png" width="760" alt="Charge history"></p>
 
@@ -88,19 +93,30 @@ Apple Developer Program membership and a *Developer ID Application* certificate,
 xcrun notarytool store-credentials BatteryHog-notary \
   --apple-id "you@example.com" --team-id "TEAMID" --password "app-specific-password"
 
-# build → sign (hardened runtime) → notarize → staple → package
+# VERSION is the single source for the app, DMG, tag and appcast version
+VERSION="$(<VERSION)"
+
+# build → sign nested Sparkle helpers + app → package → notarize → staple → appcast
 SIGN_ID="Developer ID Application: Your Name (TEAMID)" bash src/release.sh
 ```
 
-This outputs `dist/BatteryHog-<version>.dmg`, stapled and ready to share. Attach it to a
-GitHub Release:
+The build downloads the pinned Sparkle binary distribution into `.build/`, verifies its SHA-256, and embeds its license. A full release outputs both `dist/BatteryHog-$VERSION.dmg` and a signed `dist/appcast.xml`.
+
+Sparkle's Ed25519 private key stays in the login Keychain under `com.lukefairbanks.batteryhog`; only its public key is committed. Set it up once on a new release Mac with `src/fetch_sparkle.sh` and Sparkle's `generate_keys` tool, then keep an encrypted offline backup of that key.
+
+After the release has been reviewed on `main`, stage both assets together as a draft:
 
 ```bash
-gh release create v1.3.1 dist/BatteryHog-1.3.1.dmg --title "Battery Hog 1.3.1"
+bash src/stage_release.sh
+# Review the draft and both install paths before making it live.
+gh release edit "v$VERSION" --repo luke-fairbanks/BatteryHog --draft=false --latest
+
+# Once the GitHub release is public, derive the Homebrew version + SHA from it.
+# This stages the tap diff but deliberately does not commit or push it.
+bash src/stage_homebrew_cask.sh
 ```
 
-> The app uses no third-party libraries, so it needs no special hardened-runtime
-> entitlements — `src/release.sh` signs it with `--options runtime` and nothing else.
+The app is not sandboxed and needs no special hardened-runtime entitlements. `src/release.sh` signs Sparkle's nested helpers deepest-first, then the framework, Battery Hog, and the DMG before notarization. The appcast is generated only after the final DMG is stapled because its EdDSA signature covers those exact bytes.
 
 ## How it works
 
@@ -123,9 +139,9 @@ translucent sidebar, serves real app icons, and runs the menu-bar item.
 
 ## Privacy
 
-100% local. Battery Hog reads only from the macOS tools above and shows the results in its
-own window. **Nothing is sent anywhere** — no network requests, no analytics. The admin
-password (if you use Low Power Mode) goes straight to macOS's own prompt.
+Battery monitoring is 100% local. Battery Hog reads only from the macOS tools above and shows the results in its own window. There is no analytics, monitoring upload, or system profiling. The only outbound request is to GitHub's signed update feed when you manually check for an update or opt in to periodic checks; automatic checks are off by default. As with any web request, GitHub can see the request's IP address and app version. Homebrew-managed installs do not use the built-in updater. The admin password (if you use Low Power Mode) goes straight to macOS's own prompt.
+
+Sparkle is included under its permissive license, bundled in the app as `Sparkle-LICENSE.txt`.
 
 ## License
 

@@ -235,6 +235,64 @@ class DashboardContractTests(unittest.TestCase):
         self.assertRegex(self.script, r"pendingSettings\.heat")
         self.assertRegex(self.script, r"JSON\.stringify\(\s*\{\s*heat\s*:")
 
+    def test_native_software_update_card_and_bridge_contracts(self):
+        required_ids = {
+            "softwareUpdatesCard", "updateVersion", "updateTitle", "updateStatus",
+            "updateCheckBtn", "updateBrewBtn", "updateDirectControls",
+            "updateHomebrewControls", "updateHomebrewCommand",
+            "updateAutomaticSwitch",
+        }
+        for element_id in sorted(required_ids):
+            with self.subTest(element_id=element_id):
+                self.attrs_for(element_id)
+
+        _tag, card = self.attrs_for("softwareUpdatesCard")
+        self.assertIn("native-update-card", card.get("class", "").split())
+        self.assertEqual(card.get("aria-hidden"), "true")
+        self.assertRegex(self.css, r"\.native-update-card\s*\{[^}]*display\s*:\s*none")
+        self.assertRegex(
+            self.css,
+            r"\.native-shell\s+\.native-update-card\s*\{[^}]*display\s*:\s*block",
+        )
+
+        switch_tag, switch = self.attrs_for("updateAutomaticSwitch")
+        self.assertEqual(switch_tag, "div")
+        self.assertEqual(switch.get("role"), "switch")
+        self.assertEqual(switch.get("tabindex"), "0")
+        self.assertEqual(switch.get("aria-checked"), "false")
+        self.assertIn("Off by default", self.html)
+
+        for name in (
+            "postUpdateAction", "requestUpdateState", "renderSoftwareUpdates",
+            "checkForUpdates", "setAutomaticUpdateChecks",
+            "copyHomebrewUpdateCommand", "batteryHogUpdatesDidChange",
+        ):
+            with self.subTest(function=name):
+                self.assert_function(name)
+        self.assertIn("window.webkit.messageHandlers.updates", self.script)
+        self.assertRegex(
+            self.script,
+            r"window\.batteryHogUpdatesDidChange\s*=\s*batteryHogUpdatesDidChange",
+        )
+        for action in (
+            "getState", "check", "setAutomaticChecks", "copyHomebrewCommand",
+        ):
+            with self.subTest(action=action):
+                self.assertRegex(
+                    self.script,
+                    rf"postUpdateAction\(\s*[\"']{action}[\"']",
+                )
+
+        setter = re.search(
+            r"function\s+setAutomaticUpdateChecks\s*\(.*?"
+            r"(?=\nfunction\s+copyHomebrewUpdateCommand\s*\()",
+            self.script,
+            flags=re.DOTALL,
+        )
+        self.assertIsNotNone(setter)
+        self.assertNotIn("/api/settings", setter.group(0),
+                         "Sparkle preferences must not be posted to Python")
+
     def test_javascript_id_references_have_static_targets(self):
         # Catch accidental removal/renaming of a live target during a visual rewrite.
         referenced = set(re.findall(

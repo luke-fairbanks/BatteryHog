@@ -266,6 +266,26 @@
   .set-thr{display:flex;align-items:center;gap:12px}
   .set-thr input[type=range]{accent-color:var(--green);width:150px;cursor:pointer}
   .set-thr-v{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--txt);width:36px;text-align:right}
+  /* Native-shell software updates. The browser dashboard has no updater bridge,
+     so the whole card stays out of its layout and accessibility tree. */
+  .native-update-card{display:none}
+  .native-shell .native-update-card{display:block}
+  .update-head{display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .update-head .sec-title{margin:0}
+  .update-version{font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--txt-3);letter-spacing:.02em}
+  .update-overview{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:14px;margin-top:16px}
+  .update-mark{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-text)}
+  .update-mark svg{width:21px;height:21px}
+  .update-mark.checking svg{animation:spin .9s linear infinite}
+  .update-title{font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--txt)}
+  .update-status{font-size:11.5px;line-height:1.45;color:var(--txt-3);margin-top:3px;max-width:570px}
+  .update-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+  .update-mode{margin-top:15px;padding-top:11px;border-top:1px solid var(--line)}
+  .update-mode[hidden]{display:none}
+  .update-mode .set-row{padding-block:8px}
+  .update-command{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+  .update-command code{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;-webkit-user-select:text;user-select:text;font:600 11px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--txt-2);background:var(--track);padding:9px 11px;border-radius:9px}
+  .update-homebrew-copy{font-size:11.5px;line-height:1.4;color:var(--txt-3);margin-top:8px}
 
   /* development workloads + battery-aware agent mode */
   .dev-hero{padding:23px 25px;margin-bottom:16px;overflow:hidden;position:relative}
@@ -830,6 +850,7 @@
   #page-settings .page-scroll>.card:first-child{grid-column:auto;display:block}
   #page-settings .page-scroll>.card:first-child>.sec-title,#page-settings .set-preview{margin:0}
   #page-settings .page-scroll>.card:first-child>.set-rows{display:flex}
+  #page-settings .native-update-card{grid-column:1/-1}
   .set-preview{align-self:start;flex-direction:row;align-items:center;justify-content:space-between;margin:10px 0 16px;padding:10px 0 14px;border-bottom:1px solid var(--line)}
   .set-mb{padding:9px 13px;border-radius:10px;background:var(--canvas-deep);color:var(--on-deep)}
   .set-rows{gap:2px}
@@ -879,6 +900,7 @@
     #page-settings .page-scroll{grid-template-columns:1fr}
     #page-settings .page-scroll>.card:first-child{grid-column:auto;display:block}
     #page-settings .page-scroll>.card:first-child>.set-rows{display:flex}
+    #page-settings .native-update-card{grid-column:auto}
     #page-settings .set-preview{margin:8px 0 16px;flex-direction:row;align-items:center}
     .pthead,.prow{grid-template-columns:26px 2fr .95fr .95fr 72px}
     .pthead>*:nth-child(5),.prow>*:nth-child(5){display:none}
@@ -1277,7 +1299,7 @@
           <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
           <div>
             <div class="page-title">Settings</div>
-            <div class="page-sub">Menu bar and notifications</div>
+            <div class="page-sub">Menu bar, notifications and updates</div>
           </div>
         </div>
       </div>
@@ -1302,6 +1324,34 @@
             <div class="set-row set-row-threshold"><div class="set-row-t"><div class="set-row-title">Low-battery alert at</div><div class="set-row-sub">notify when battery drops to this level</div></div><div class="set-thr"><input type="range" id="thrRange" min="5" max="50" step="5" value="20"><span class="set-thr-v" id="thrVal">20%</span></div></div>
           </div>
         </div>
+
+        <div class="card card-pad native-update-card" id="softwareUpdatesCard" aria-hidden="true">
+          <div class="update-head">
+            <div class="sec-title">Software updates</div>
+            <div class="update-version" id="updateVersion">Battery Hog</div>
+          </div>
+          <div class="update-overview">
+            <div class="update-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0 2 5.3"/><path d="M20 4v7h-7"/></svg></div>
+            <div>
+              <div class="update-title" id="updateTitle">Updates are ready when you are</div>
+              <div class="update-status" id="updateStatus" role="status" aria-live="polite">Ask Battery Hog to check, or opt in to automatic checks below.</div>
+            </div>
+            <div class="update-actions">
+              <button type="button" class="btn" id="updateCheckBtn">Check for Updates…</button>
+              <button type="button" class="btn" id="updateBrewBtn" hidden>Copy upgrade command</button>
+            </div>
+          </div>
+          <div class="update-mode" id="updateDirectControls">
+            <div class="set-row" data-update="automatic-checks">
+              <div class="set-row-t"><div class="set-row-title">Automatically check for updates</div><div class="set-row-sub">Off by default. If enabled, checks GitHub about once a day; no analytics or system profile is sent.</div></div>
+              <div class="switch" id="updateAutomaticSwitch" role="switch" aria-checked="false" aria-label="Automatically check for updates" tabindex="0"><span class="knob"></span></div>
+            </div>
+          </div>
+          <div class="update-mode" id="updateHomebrewControls" hidden>
+            <div class="update-command"><code id="updateHomebrewCommand">brew upgrade --cask battery-hog</code></div>
+            <div class="update-homebrew-copy">This copy is managed by Homebrew, so upgrades stay with the package manager that installed it.</div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -1318,7 +1368,7 @@ const BAT_C=2*Math.PI*80;      // battery ring circumference
 const MEM_C=251.3;             // semicircle arc length (pi * 80)
 const SCAN_C=2*Math.PI*74;     // scan orb circumference
 
-let state={ data:null, room:"overview", sort:"score", lastTs:null, energy:null, measuring:false, statsInFlight:false, powerHistory:[], pendingMute:new Set(), pendingUnmute:false, pendingSettings:{} };
+let state={ data:null, room:"overview", sort:"score", lastTs:null, energy:null, measuring:false, statsInFlight:false, powerHistory:[], pendingMute:new Set(), pendingUnmute:false, pendingSettings:{}, updates:{requested:false,received:false,installMethod:"direct",automaticChecks:false,status:"idle"} };
 
 /* ---------- helpers ---------- */
 function fmtGB(g){ return (g==null)?"—":(g>=10?g.toFixed(1):g.toFixed(2))+" GB"; }
@@ -1504,6 +1554,13 @@ $$('#page-settings .set-row[data-mb] .switch').forEach(sw=>{
   thr.addEventListener("input",()=>{ const v=parseInt(thr.value,10)||20; $("#thrVal").textContent=v+"%"; state.pendingSettings.low_threshold=v; applyPendingSettings(); });
   thr.addEventListener("change",()=>{ const v=parseInt(thr.value,10)||20; state.pendingSettings.low_threshold=v; fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({low_threshold:v})}).catch(()=>{}); });
 })();
+(function(){ const sw=$("#updateAutomaticSwitch"); if(!sw) return;
+  const t=()=>setAutomaticUpdateChecks(sw.getAttribute("aria-checked")!=="true");
+  sw.addEventListener("click",t);
+  sw.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); t(); } });
+})();
+$("#updateCheckBtn").addEventListener("click",checkForUpdates);
+$("#updateBrewBtn").addEventListener("click",copyHomebrewUpdateCommand);
 (function(){ const sw=$("#agentModeSwitch"); if(!sw) return;
   const t=()=>toggleAgentMode();
   sw.addEventListener("click",t);
@@ -1915,6 +1972,115 @@ function setMenubar(key,on){
   state.pendingSettings.menubar=Object.assign({},state.pendingSettings.menubar||{},{[key]:on});
   applyPendingSettings(); renderSettings();
   fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({menubar:{[key]:on}})}).catch(()=>{});
+}
+
+/* ---------- native software updates ----------
+   These preferences belong to Sparkle/the native shell. They intentionally do
+   not travel through the local Python settings API. */
+function nativeUpdatesHandler(){
+  return window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.updates;
+}
+function postUpdateAction(action,details){
+  const handler=nativeUpdatesHandler();
+  if(!handler) return false;
+  handler.postMessage(Object.assign({action:action},details||{}));
+  return true;
+}
+function requestUpdateState(){
+  if(!document.documentElement.classList.contains("native-shell")) return;
+  const card=$("#softwareUpdatesCard");
+  if(card) card.setAttribute("aria-hidden","false");
+  state.updates.requested=true;
+  renderSoftwareUpdates();
+  postUpdateAction("getState");
+}
+function batteryHogUpdatesDidChange(next){
+  if(!next||typeof next!=="object"||Array.isArray(next)) return;
+  const incomingPhase=String(next.status||next.phase||"").toLowerCase().replace(/[\s_-]+/g,"");
+  const merged=Object.assign({},state.updates,next,{received:true});
+  if(!("checking" in next)) merged.checking=incomingPhase==="checking";
+  if(!("error" in next)&&incomingPhase!=="error"&&incomingPhase!=="failed") delete merged.error;
+  state.updates=merged;
+  const card=$("#softwareUpdatesCard");
+  if(card) card.setAttribute("aria-hidden","false");
+  renderSoftwareUpdates();
+}
+window.batteryHogUpdatesDidChange=batteryHogUpdatesDidChange;
+
+function updateInstallMethod(u){
+  const raw=u.installMethod||u.installationMethod||u.method||(u.homebrewManaged?"homebrew":"direct");
+  return String(raw).toLowerCase().includes("brew")?"homebrew":"direct";
+}
+function updateVersionLabel(value){
+  if(value==null||value==="") return "";
+  const v=String(value); return v.toLowerCase().startsWith("v")?v:"v"+v;
+}
+function renderSoftwareUpdates(){
+  const card=$("#softwareUpdatesCard"); if(!card) return;
+  const u=state.updates||{}, method=updateInstallMethod(u), homebrew=method==="homebrew";
+  const version=updateVersionLabel(u.currentVersion||u.version);
+  const latest=updateVersionLabel(u.latestVersion||u.availableVersion);
+  const phase=String(u.status||u.phase||"idle").toLowerCase().replace(/[\s_-]+/g,"");
+  const checking=!!u.checking||phase==="checking";
+  const hasUpdate=!!u.updateAvailable||phase==="updateavailable"||phase==="available";
+  const failed=!!u.error||phase==="error"||phase==="failed";
+  const automatic=("automaticChecks" in u)?!!u.automaticChecks:!!u.automaticallyChecksForUpdates;
+  const direct=$("#updateDirectControls"), brew=$("#updateHomebrewControls");
+  const check=$("#updateCheckBtn"), brewButton=$("#updateBrewBtn"), sw=$("#updateAutomaticSwitch");
+  direct.hidden=homebrew; brew.hidden=!homebrew; check.hidden=homebrew; brewButton.hidden=!homebrew;
+  $("#updateVersion").textContent="Battery Hog"+(version?" "+version:"");
+  sw.setAttribute("aria-checked",automatic?"true":"false");
+  sw.setAttribute("aria-disabled",u.available===false?"true":"false");
+  check.disabled=checking||u.canCheck===false||u.available===false;
+  check.textContent=checking?"Checking…":(hasUpdate?"Review Update…":"Check for Updates…");
+  const command=u.homebrewCommand||"brew upgrade --cask battery-hog";
+  $("#updateHomebrewCommand").textContent=command;
+  const mark=card.querySelector(".update-mark"); if(mark) mark.classList.toggle("checking",checking);
+
+  let title="Updates are ready when you are";
+  let copy=automatic?"Automatic checks are on. Battery Hog uses its signed release feed.":"Ask Battery Hog to check, or opt in to automatic checks below.";
+  if(homebrew){
+    title="Managed by Homebrew";
+    copy="This installation stays on Homebrew’s upgrade path"+(version?" and is currently "+version:"")+".";
+  }else if(checking){
+    title="Checking for a new version…";
+    copy="Battery Hog is securely checking its signed release feed.";
+  }else if(failed){
+    title="Couldn’t check for updates";
+    copy=typeof u.error==="string"?u.error:"Try again when your Mac is online.";
+  }else if(hasUpdate){
+    title=(latest?latest+" is":"An update is")+" ready";
+    copy="Sparkle will walk you through the signed update.";
+  }else if(phase==="noupdate"){
+    title="No update is available for this Mac";
+    copy="Battery Hog did not find a newer compatible release.";
+  }else if(phase==="uptodate"||phase==="current"){
+    title="Battery Hog"+(version?" "+version:"")+" is up to date";
+    copy=automatic?"Automatic checks are on. We’ll let you know when a signed release is ready.":"You’re current. Automatic checks remain off until you opt in.";
+  }
+  if(typeof u.message==="string"&&u.message.trim()) copy=u.message.trim();
+  $("#updateTitle").textContent=title;
+  $("#updateStatus").textContent=copy;
+}
+function checkForUpdates(){
+  const u=state.updates||{}; if(updateInstallMethod(u)==="homebrew") return;
+  u.status="checking"; u.checking=true; delete u.error; delete u.message; renderSoftwareUpdates();
+  if(!postUpdateAction("check")){
+    u.status="error"; u.checking=false; u.error="The native update service is unavailable."; renderSoftwareUpdates();
+  }
+}
+function setAutomaticUpdateChecks(enabled){
+  const u=state.updates||{}; if(updateInstallMethod(u)==="homebrew"||u.available===false) return;
+  const previous=!!u.automaticChecks;
+  u.automaticChecks=!!enabled; renderSoftwareUpdates();
+  if(postUpdateAction("setAutomaticChecks",{enabled:!!enabled})){
+    toast(enabled?"Automatic update checks on":"Automatic update checks off");
+  }else{
+    u.automaticChecks=previous; renderSoftwareUpdates();
+  }
+}
+function copyHomebrewUpdateCommand(){
+  if(postUpdateAction("copyHomebrewCommand")) toast("Homebrew upgrade command copied");
 }
 
 /* ---------- insights (drain analysis) ---------- */
@@ -2422,6 +2588,9 @@ function updateAge(){
 
 /* ---------- boot ---------- */
 fetchStats();
+/* The native-shell class arrives from a WKUserScript at document end, just
+   after this inline script. Yield once so the bridge has identified the shell. */
+setTimeout(requestUpdateState,0);
 setInterval(fetchStats,5000);
 setInterval(updateAge,1000);
 </script>

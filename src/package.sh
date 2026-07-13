@@ -5,10 +5,11 @@
 # Apple Silicon) but NOT notarized, so the first launch shows a Gatekeeper prompt;
 # see the README "Download" section for the one-time "Open Anyway" step.
 # For a warning-free, notarized build instead, use src/release.sh.
-set -e
+set -euo pipefail
 cd "$(dirname "$0")"
 ROOT="$(cd .. && pwd)"
-VERSION="${VERSION:-1.3.1}"
+source "$ROOT/src/version.sh"
+SPARKLE_ROOT="$(bash "$ROOT/src/fetch_sparkle.sh")"
 APP_NAME="${APP_NAME:-Battery Hog}"
 BUNDLE_ID="${BUNDLE_ID:-com.lukefairbanks.batteryhog}"
 DIST="${DIST:-$ROOT/dist}"
@@ -17,7 +18,7 @@ DMG="$DIST/${DMG_NAME:-BatteryHog-$VERSION.dmg}"
 SWIFT_TARGET="${SWIFT_TARGET:-arm64-apple-macosx11.0}"
 
 rm -rf "$DIST"; mkdir -p "$DIST"
-C="$APP/Contents"; mkdir -p "$C/MacOS" "$C/Resources"
+C="$APP/Contents"; mkdir -p "$C/MacOS" "$C/Resources" "$C/Frameworks"
 
 echo "==> Icon"
 swift make_icon.swift >/dev/null
@@ -39,15 +40,18 @@ fi
 
 echo "==> Compile (Swift)"
 swiftc -O -target "$SWIFT_TARGET" BatteryHogApp.swift -o "$C/MacOS/BatteryHog" \
-    -framework Cocoa -framework WebKit -framework UserNotifications
+    -F "$SPARKLE_ROOT" -framework Sparkle \
+    -framework Cocoa -framework WebKit -framework UserNotifications \
+    -Xlinker -rpath -Xlinker '@loader_path/../Frameworks'
 
 echo "==> Bundle"
 cp Info.plist "$C/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleName $APP_NAME" "$C/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $APP_NAME" "$C/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" "$C/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$C/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" "$C/Info.plist"
+stamp_bundle_version "$C/Info.plist"
+ditto "$SPARKLE_ROOT/Sparkle.framework" "$C/Frameworks/Sparkle.framework"
+cp "$SPARKLE_ROOT/LICENSE" "$C/Resources/Sparkle-LICENSE.txt"
 cp "$ROOT/battery_hog.py" "$C/Resources/battery_hog.py"
 cp "$ROOT/batteryhog_workloads.py" "$C/Resources/batteryhog_workloads.py"
 cp "$ROOT/batteryhog_gate.py" "$C/Resources/batteryhog_gate.py"

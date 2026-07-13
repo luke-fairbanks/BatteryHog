@@ -15,3 +15,6 @@ __pycache__/
 
 # signed release output
 dist/
+
+# pinned third-party build dependencies (downloaded and verified on demand)
+.build/

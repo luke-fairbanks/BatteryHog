@@ -13,21 +13,22 @@
 # ── Usage ──
 #   SIGN_ID="Developer ID Application: Your Name (TEAMID)" bash src/release.sh
 # Optional env:
-#   VERSION=1.3.1                bundle/dmg version (default 1.3.1)
 #   NOTARY_PROFILE=BatteryHog-notary
 #   SKIP_NOTARIZE=1              build + sign + dmg only (dry run, no notarization)
 
-set -e
+set -euo pipefail
 cd "$(dirname "$0")"
 ROOT="$(cd .. && pwd)"
-VERSION="${VERSION:-1.3.1}"
+source "$ROOT/src/version.sh"
+source "$ROOT/src/release_identity.sh"
+SPARKLE_ROOT="$(bash "$ROOT/src/fetch_sparkle.sh")"
 NOTARY_PROFILE="${NOTARY_PROFILE:-BatteryHog-notary}"
 DIST="$ROOT/dist"
 APP="$DIST/Battery Hog.app"
 DMG="$DIST/BatteryHog-$VERSION.dmg"
 SWIFT_TARGET="${SWIFT_TARGET:-arm64-apple-macosx11.0}"
 
-if [ -z "$SIGN_ID" ]; then
+if [ -z "${SIGN_ID:-}" ]; then
     echo "Set SIGN_ID to your Developer ID Application identity, e.g.:"
     echo '  SIGN_ID="Developer ID Application: Your Name (TEAMID)" bash src/release.sh'
     echo
@@ -39,7 +40,7 @@ fi
 
 echo "==> Clean"
 rm -rf "$DIST"; mkdir -p "$DIST"
-C="$APP/Contents"; mkdir -p "$C/MacOS" "$C/Resources"
+C="$APP/Contents"; mkdir -p "$C/MacOS" "$C/Resources" "$C/Frameworks"
 
 echo "==> Icon"
 swift make_icon.swift >/dev/null
@@ -61,12 +62,15 @@ fi
 
 echo "==> Compile (Swift)"
 swiftc -O -target "$SWIFT_TARGET" BatteryHogApp.swift -o "$C/MacOS/BatteryHog" \
-    -framework Cocoa -framework WebKit -framework UserNotifications
+    -F "$SPARKLE_ROOT" -framework Sparkle \
+    -framework Cocoa -framework WebKit -framework UserNotifications \
+    -Xlinker -rpath -Xlinker '@loader_path/../Frameworks'
 
 echo "==> Bundle"
 cp Info.plist "$C/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$C/Info.plist" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" "$C/Info.plist" 2>/dev/null || true
+stamp_bundle_version "$C/Info.plist"
+ditto "$SPARKLE_ROOT/Sparkle.framework" "$C/Frameworks/Sparkle.framework"
+cp "$SPARKLE_ROOT/LICENSE" "$C/Resources/Sparkle-LICENSE.txt"
 cp "$ROOT/battery_hog.py" "$C/Resources/battery_hog.py"
 cp "$ROOT/batteryhog_workloads.py" "$C/Resources/batteryhog_workloads.py"
 cp "$ROOT/batteryhog_gate.py" "$C/Resources/batteryhog_gate.py"
@@ -75,15 +79,26 @@ cp "$ROOT/dashboard.html" "$C/Resources/dashboard.html"
 printf 'APPL????' > "$C/PkgInfo"
 
 echo "==> Sign (Developer ID, hardened runtime, secure timestamp)"
+SPARKLE_FRAMEWORK="$C/Frameworks/Sparkle.framework"
+SPARKLE_BIN="$SPARKLE_FRAMEWORK/Versions/B"
+codesign --force --options runtime --timestamp --sign "$SIGN_ID" \
+    "$SPARKLE_BIN/XPCServices/Installer.xpc"
+codesign --force --options runtime --timestamp --sign "$SIGN_ID" \
+    --preserve-metadata=entitlements "$SPARKLE_BIN/XPCServices/Downloader.xpc"
+codesign --force --options runtime --timestamp --sign "$SIGN_ID" "$SPARKLE_BIN/Autoupdate"
+codesign --force --options runtime --timestamp --sign "$SIGN_ID" "$SPARKLE_BIN/Updater.app"
+codesign --force --options runtime --timestamp --sign "$SIGN_ID" "$SPARKLE_FRAMEWORK"
 codesign --force --options runtime --timestamp --sign "$SIGN_ID" "$C/MacOS/BatteryHog"
 codesign --force --options runtime --timestamp --sign "$SIGN_ID" "$APP"
-codesign --verify --strict --verbose=2 "$APP"
+codesign --deep --verify --strict --verbose=2 "$APP"
+require_battery_hog_bundle_team "$APP"
 
 echo "==> Build DMG"
 "$ROOT/src/build_dmg.sh" "$APP" "$DMG" "Battery Hog Installer"
 codesign --force --timestamp --sign "$SIGN_ID" "$DMG"
+require_codesign_team "$DMG"
 
-if [ "$SKIP_NOTARIZE" = "1" ]; then
+if [ "${SKIP_NOTARIZE:-0}" = "1" ]; then
     echo "==> SKIP_NOTARIZE set — signed app + DMG are in $DIST (not notarized)."
     exit 0
 fi
@@ -94,6 +109,10 @@ echo "==> Staple"
 xcrun stapler staple "$DMG"
 xcrun stapler staple "$APP" || true
 
+echo "==> Generate signed Sparkle appcast"
+"$ROOT/src/generate_appcast.sh" "$DMG"
+
 echo
 echo "==> Done:  $DMG"
+echo "             $DIST/appcast.xml"
 echo "    Gatekeeper check:  spctl -a -t open --context context:primary-signature -v \"$DMG\""
