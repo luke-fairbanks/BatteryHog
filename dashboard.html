@@ -622,7 +622,7 @@
   .nav-item .ico{width:20px;height:20px}
   .nav-item .ico svg{width:17px;height:17px}
   .nav-item .badge{font:650 10.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--txt-3)}
-  .side-foot{padding:13px 8px 2px;border-top:1px solid var(--line);gap:8px}
+  .side-foot{padding:13px 8px 12px;border-top:1px solid var(--line);gap:8px}
   .side-foot .row{font-size:10.5px;font-weight:570}
   .side-foot .row:first-child{display:inline-flex;align-self:flex-start;padding:5px 8px;border-radius:99px;background:var(--accent-soft);color:var(--txt-2)}
   .side-foot .row .dot{width:6px;height:6px;background:var(--accent);box-shadow:0 0 0 4px rgba(191,243,71,.10)}
@@ -686,6 +686,7 @@
   }
   .current-energy:after{content:none}
   .current-energy .hero-top{grid-column:1/-1;margin-bottom:24px}
+  .current-energy .hero-top .sec-title,.current-cause-top .sec-title,.current-pulse-head .sec-title,.current-top-head .sec-title{margin-bottom:0}
   .current-energy .sec-title{color:var(--on-deep-muted)}
   .current-forecast{grid-column:1;grid-row:2;min-width:0;align-self:start;overflow:hidden}
   .current-forecast-label{font-size:12px;color:var(--on-deep-muted);font-weight:500;margin-bottom:6px}
@@ -709,7 +710,7 @@
   .current-cause:after{content:"";position:absolute;right:-65px;bottom:-70px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,var(--accent-soft),transparent 68%);pointer-events:none}
   .current-cause-top{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}
   .current-cause-top .pill{flex-shrink:0}
-  .current-cause-body{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;flex:1;width:100%;min-width:0;min-height:0;padding:22px 0 15px;position:relative;z-index:1}
+  .current-cause-body{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;flex:1;width:100%;min-width:0;min-height:0;padding:24px 0 12px;position:relative;z-index:1}
   .current-cause-icon{width:46px;height:46px;margin-bottom:15px}
   .current-cause-icon .app-ico{width:46px!important;height:46px!important;font-size:16px!important}
   .current-cause-icon .app-ico:not(.img){border-radius:14px}
