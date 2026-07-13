@@ -190,6 +190,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let ucc = WKUserContentController()
         ucc.add(self, name: "drag")
         let dragJS = """
+        document.documentElement.classList.add('native-shell');
         document.addEventListener('mousedown', function(e){
           if (e.button !== 0) return;
           if (!e.target.closest('.page-head,.drag-strip,.brand')) return;   // top title-bar area only
