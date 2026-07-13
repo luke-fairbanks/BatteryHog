@@ -270,6 +270,12 @@ class DashboardContractTests(unittest.TestCase):
             with self.subTest(function=name):
                 self.assert_function(name)
         self.assertIn("window.webkit.messageHandlers.updates", self.script)
+        self.assertIn("update-direct-icon", self.html)
+        self.assertIn("update-brew-icon", self.html)
+        self.assertRegex(
+            self.script,
+            r'classList\.toggle\(\s*["\']homebrew["\']\s*,\s*homebrew\s*\)',
+        )
         self.assertRegex(
             self.script,
             r"window\.batteryHogUpdatesDidChange\s*=\s*batteryHogUpdatesDidChange",
