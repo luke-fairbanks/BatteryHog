@@ -111,11 +111,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 .hero {
   position: relative;
-  min-height: min(880px, calc(100svh - 74px));
+  min-height: min(820px, calc(100svh - 74px));
   display: flex;
   align-items: center;
   overflow: hidden;
-  padding: 56px 0 64px;
+  padding: 52px 0 58px;
 }
 .hero::after {
   content: "";
@@ -128,9 +128,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .hero-grid {
   width: min(1560px, calc(100% - 80px));
   display: grid;
-  grid-template-columns: 660px minmax(0, 1fr);
+  grid-template-columns: minmax(560px, .8fr) minmax(0, 1.2fr);
   align-items: center;
-  gap: 48px;
+  gap: 80px;
 }
 .hero-copy { position: relative; z-index: 2; }
 .eyebrow {
@@ -146,16 +146,16 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .eyebrow::before { content: ""; width: 22px; height: 2px; border-radius: 2px; background: currentColor; }
 h1, h2, h3, p { margin-top: 0; }
 h1 {
-  max-width: 660px;
+  max-width: 650px;
   margin-bottom: 23px;
-  font-size: clamp(58px, 4.7vw, 70px);
+  font-size: clamp(58px, 4.4vw, 68px);
   line-height: .93;
   letter-spacing: -.068em;
 }
 .hero-line { display: block; white-space: nowrap; }
 h1 .soft { color: #8d9589; }
 .hero-copy > p {
-  max-width: 670px;
+  max-width: 620px;
   margin-bottom: 29px;
   color: var(--muted);
   font-size: clamp(18px, 2vw, 22px);
@@ -168,18 +168,18 @@ h1 .soft { color: #8d9589; }
 .hero-visual {
   position: relative;
   z-index: 1;
-  width: clamp(760px, 62vw, 1040px);
+  width: min(920px, calc(100% + 120px));
   justify-self: start;
-  transform: rotate(-2.15deg);
-  transform-origin: 12% 50%;
+  transform: rotate(-1.25deg);
+  transform-origin: center;
 }
 .hero-window {
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(232, 244, 226, .24);
-  border-radius: 30px;
+  border-radius: 26px;
   background: #111712;
-  box-shadow: 0 42px 120px rgba(0, 0, 0, .54), 0 0 70px rgba(83, 217, 125, .07), inset 0 1px rgba(255, 255, 255, .08);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .46), 0 0 48px rgba(83, 217, 125, .06), inset 0 1px rgba(255, 255, 255, .08);
 }
 .hero-window::after {
   content: "";
