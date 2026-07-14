@@ -23,8 +23,8 @@ body {
   margin: 0;
   color: var(--ink);
   background:
-    radial-gradient(circle at 82% -4%, rgba(95, 220, 136, .13), transparent 29rem),
-    radial-gradient(circle at 8% 31%, rgba(186, 255, 60, .06), transparent 24rem),
+    radial-gradient(circle at 82% -4%, rgba(95, 220, 136, .08), transparent 29rem),
+    radial-gradient(circle at 8% 31%, rgba(186, 255, 60, .07), transparent 24rem),
     var(--bg);
   font-family: var(--sans);
   -webkit-font-smoothing: antialiased;
@@ -111,26 +111,26 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 .hero {
   position: relative;
-  min-height: min(820px, calc(100svh - 74px));
+  min-height: min(760px, calc(100svh - 74px));
   display: flex;
   align-items: center;
   overflow: hidden;
-  padding: 52px 0 58px;
+  padding: 48px 0 54px;
 }
 .hero::after {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: 5% -12% -28% 43%;
-  background: radial-gradient(ellipse, rgba(78, 214, 120, .13), transparent 66%);
+  inset: 12% 10% -30%;
+  background: radial-gradient(ellipse at 50% 100%, rgba(78, 214, 120, .08), transparent 68%);
   pointer-events: none;
 }
 .hero-grid {
-  width: min(1560px, calc(100% - 80px));
+  width: min(1500px, calc(100% - 80px));
   display: grid;
-  grid-template-columns: minmax(560px, .8fr) minmax(0, 1.2fr);
+  grid-template-columns: 600px minmax(0, 1fr);
   align-items: center;
-  gap: 80px;
+  gap: 96px;
 }
 .hero-copy { position: relative; z-index: 2; }
 .eyebrow {
@@ -168,18 +168,17 @@ h1 .soft { color: #8d9589; }
 .hero-visual {
   position: relative;
   z-index: 1;
-  width: min(920px, calc(100% + 120px));
-  justify-self: start;
-  transform: rotate(-1.25deg);
-  transform-origin: center;
+  width: min(720px, 100%);
+  justify-self: end;
+  transform: none;
 }
 .hero-window {
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(232, 244, 226, .24);
-  border-radius: 26px;
+  border-radius: 24px;
   background: #111712;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, .46), 0 0 48px rgba(83, 217, 125, .06), inset 0 1px rgba(255, 255, 255, .08);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, .4), 0 0 36px rgba(83, 217, 125, .05), inset 0 1px rgba(255, 255, 255, .08);
 }
 .hero-window::after {
   content: "";
@@ -333,11 +332,11 @@ h2 { margin-bottom: 17px; font-size: clamp(37px, 4.5vw, 62px); line-height: 1.02
 .use-card h3 { margin: 0 0 9px; }
 .use-card p { margin: 0; font-size: 14px; }
 
-@media (max-width: 1180px) {
+@media (max-width: 1280px) {
   .hero { min-height: auto; padding: 65px 0 72px; }
   .hero-grid { width: min(100% - 80px, 760px); grid-template-columns: 1fr; gap: 52px; }
   .hero-copy h1 { max-width: 760px; }
-  .hero-visual { width: 100%; transform: rotate(-1deg); transform-origin: center; }
+  .hero-visual { width: min(720px, 100%); transform: none; }
 }
 
 @media (max-width: 960px) {
