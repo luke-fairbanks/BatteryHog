@@ -144,7 +144,7 @@ h1 .soft { margin-left: .11em; color: #8d9589; }
 
 .diagnostic {
   position: relative;
-  min-height: 520px;
+  min-height: 536px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 30px;
@@ -182,7 +182,7 @@ h1 .soft { margin-left: .11em; color: #8d9589; }
 .trace .line { fill: none; stroke: var(--lime); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .culprit {
   display: grid;
-  grid-template-columns: 44px 1fr auto;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   align-items: center;
   gap: 13px;
   padding: 15px;
@@ -191,21 +191,20 @@ h1 .soft { margin-left: .11em; color: #8d9589; }
   background: rgba(255,255,255,.04);
 }
 .culprit-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px; color: #15180e; background: var(--lime); font: 900 17px/1 var(--mono); }
+.culprit-icon svg { width: 23px; height: 23px; }
+.culprit > div { min-width: 0; }
 .culprit strong { display: block; font-size: 14px; }
 .culprit span { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; }
 .impact { color: var(--amber); font: 750 11px/1 var(--mono); text-transform: uppercase; }
 .heat-alert {
-  position: absolute;
-  right: 15px;
-  bottom: 45px;
-  width: min(330px, 75%);
-  padding: 15px;
+  position: relative;
+  width: calc(100% - 24px);
+  margin: 12px 0 0 24px;
+  padding: 14px 15px;
   border: 1px solid rgba(255, 184, 77, .35);
-  border-radius: 16px;
-  background: rgba(25, 22, 14, .92);
-  box-shadow: 0 18px 46px rgba(0,0,0,.45);
-  backdrop-filter: blur(12px);
-  transform: rotate(-1.5deg);
+  border-radius: 14px;
+  background: #19160e;
+  box-shadow: 0 14px 34px rgba(0,0,0,.34);
 }
 .heat-alert b { display: block; margin-bottom: 6px; color: var(--amber); font: 700 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
 .heat-alert p { margin: 0; color: #d9ddd3; font-size: 12px; line-height: 1.45; }
@@ -362,13 +361,13 @@ h2 { margin-bottom: 17px; font-size: clamp(37px, 4.5vw, 62px); line-height: 1.02
   h1 { font-size: 51px; }
   .hero { padding: 50px 0 52px; }
   .hero-copy > p { font-size: 18px; }
-  .diagnostic { min-height: 470px; border-radius: 23px; }
+  .diagnostic { min-height: 510px; border-radius: 23px; }
   .diagnostic-body { padding: 21px; }
   .diag-number { font-size: 53px; }
-  .heat-alert { right: 10px; bottom: 20px; }
+  .heat-alert { width: 100%; margin-left: 0; }
   .culprit { grid-template-columns: 40px 1fr; }
   .culprit-icon { width: 40px; height: 40px; }
-  .impact { display: none; }
+  .culprit .impact { display: none; }
   .trust-list { min-height: 70px; }
   .section { padding: 78px 0; }
   .section-head { margin-bottom: 34px; }
