@@ -58,7 +58,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   backdrop-filter: blur(18px) saturate(150%);
 }
 .site-header.scrolled { border-color: var(--line); }
-.nav { min-height: 74px; display: flex; align-items: center; gap: 26px; }
+.nav { width: min(1560px, calc(100% - 80px)); min-height: 74px; display: flex; align-items: center; gap: 26px; }
 .brand {
   display: inline-flex;
   align-items: center;
@@ -111,11 +111,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 .hero {
   position: relative;
-  min-height: calc(100svh - 74px);
+  min-height: min(880px, calc(100svh - 74px));
   display: flex;
   align-items: center;
   overflow: hidden;
-  padding: 62px 0 70px;
+  padding: 56px 0 64px;
 }
 .hero::after {
   content: "";
@@ -126,11 +126,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
   pointer-events: none;
 }
 .hero-grid {
-  width: min(1380px, calc(100% - 80px));
+  width: min(1560px, calc(100% - 80px));
   display: grid;
-  grid-template-columns: 680px minmax(0, 1fr);
+  grid-template-columns: 660px minmax(0, 1fr);
   align-items: center;
-  gap: 32px;
+  gap: 48px;
 }
 .hero-copy { position: relative; z-index: 2; }
 .eyebrow {
@@ -146,9 +146,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .eyebrow::before { content: ""; width: 22px; height: 2px; border-radius: 2px; background: currentColor; }
 h1, h2, h3, p { margin-top: 0; }
 h1 {
-  max-width: 680px;
+  max-width: 660px;
   margin-bottom: 23px;
-  font-size: clamp(58px, 5vw, 72px);
+  font-size: clamp(58px, 4.7vw, 70px);
   line-height: .93;
   letter-spacing: -.068em;
 }
@@ -168,7 +168,7 @@ h1 .soft { color: #8d9589; }
 .hero-visual {
   position: relative;
   z-index: 1;
-  width: clamp(760px, 67vw, 1040px);
+  width: clamp(760px, 62vw, 1040px);
   justify-self: start;
   transform: rotate(-2.15deg);
   transform-origin: 12% 50%;
@@ -335,7 +335,7 @@ h2 { margin-bottom: 17px; font-size: clamp(37px, 4.5vw, 62px); line-height: 1.02
 
 @media (max-width: 1180px) {
   .hero { min-height: auto; padding: 65px 0 72px; }
-  .hero-grid { width: min(100% - 40px, 760px); grid-template-columns: 1fr; gap: 52px; }
+  .hero-grid { width: min(100% - 80px, 760px); grid-template-columns: 1fr; gap: 52px; }
   .hero-copy h1 { max-width: 760px; }
   .hero-visual { width: 100%; transform: rotate(-1deg); transform-origin: center; }
 }
