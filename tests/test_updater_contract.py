@@ -15,6 +15,11 @@ class UpdaterContractTests(unittest.TestCase):
         cls.version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
         cls.plist = plistlib.loads((SRC / "Info.plist").read_bytes())
         cls.swift = (SRC / "BatteryHogApp.swift").read_text(encoding="utf-8")
+        cls.backend = (SRC / "BatteryHogBackend.swift").read_text(encoding="utf-8")
+        cls.stores = (SRC / "BatteryHogStores.swift").read_text(encoding="utf-8")
+        cls.gate_store = (SRC / "AgentGateStore.swift").read_text(encoding="utf-8")
+        cls.gate = (SRC / "BatteryHogGate.swift").read_text(encoding="utf-8")
+        cls.native_build = (SRC / "native_build.sh").read_text(encoding="utf-8")
         cls.release = (SRC / "release.sh").read_text(encoding="utf-8")
         cls.appcast = (SRC / "generate_appcast.sh").read_text(encoding="utf-8")
 
@@ -46,12 +51,15 @@ class UpdaterContractTests(unittest.TestCase):
         self.assertIn('rm -rf "$DIST_ROOT"', fetcher)
         self.assertNotIn('if [ ! -f "$FRAMEWORK/Versions/B/Sparkle" ]', fetcher)
 
-    def test_every_build_links_and_embeds_sparkle(self):
+    def test_every_build_uses_shared_native_compiler_and_embeds_sparkle(self):
+        self.assertIn('-F "$SPARKLE_ROOT" -framework Sparkle', self.native_build)
+        self.assertIn("-Xlinker '@loader_path/../Frameworks'", self.native_build)
+        self.assertIn('-o "$contents/MacOS/BatteryHog"', self.native_build)
         for script_name in ("build.sh", "package.sh", "release.sh"):
             script = (SRC / script_name).read_text(encoding="utf-8")
             with self.subTest(script=script_name):
-                self.assertIn('-F "$SPARKLE_ROOT" -framework Sparkle', script)
-                self.assertIn("-Xlinker '@loader_path/../Frameworks'", script)
+                self.assertIn('source "$ROOT/src/native_build.sh"', script)
+                self.assertIn('compile_battery_hog_native "$C"', script)
                 self.assertIn(
                     'ditto "$SPARKLE_ROOT/Sparkle.framework" "$C/Frameworks/Sparkle.framework"',
                     script,
@@ -76,6 +84,25 @@ class UpdaterContractTests(unittest.TestCase):
             "https://github.com/luke-fairbanks/BatteryHog/releases/latest/download/appcast.xml",
         )
         self.assertEqual(len(base64.b64decode(self.plist["SUPublicEDKey"], validate=True)), 32)
+        self.assertEqual(self.plist.get("LSMinimumSystemVersion"), "11.0")
+        self.assertNotIn("NSAppTransportSecurity", self.plist)
+        self.assertNotIn("NSAllowsLocalNetworking", self.plist)
+
+    def test_shared_native_build_compiles_app_and_gate_for_the_same_target(self):
+        for source in (
+            "SystemSupport.swift", "AgentGateStore.swift", "BatteryHogStores.swift",
+            "WorkloadDetector.swift", "BatteryHogBackend.swift", "BatteryHogApp.swift",
+            "BatteryHogGate.swift",
+        ):
+            with self.subTest(source=source):
+                self.assertIn(source, self.native_build)
+        self.assertEqual(self.native_build.count('-target "$SWIFT_TARGET"'), 2)
+        self.assertIn('-o "$contents/MacOS/BatteryHog"', self.native_build)
+        self.assertIn('-o "$contents/Helpers/batteryhog-gate"', self.native_build)
+        self.assertIn('chmod 755 "$contents/Helpers/batteryhog-gate"', self.native_build)
+        gate_sources = self.native_build.split("BATTERY_HOG_GATE_SOURCES=(", 1)[1].split(")", 1)[0]
+        self.assertIn("BatteryHogGate.swift", gate_sources)
+        self.assertNotIn("BatteryHogApp.swift", gate_sources)
 
     def test_release_signs_nested_sparkle_code_deepest_first(self):
         signing_section = self.release.split('echo "==> Sign', 1)[1].split(
@@ -87,6 +114,7 @@ class UpdaterContractTests(unittest.TestCase):
             '"$SPARKLE_BIN/Autoupdate"',
             '"$SPARKLE_BIN/Updater.app"',
             '"$SPARKLE_FRAMEWORK"',
+            '"$C/Helpers/batteryhog-gate"',
             '"$C/MacOS/BatteryHog"',
             '"$APP"',
         )
@@ -105,6 +133,7 @@ class UpdaterContractTests(unittest.TestCase):
         for target in (
             "XPCServices/Installer.xpc", "XPCServices/Downloader.xpc",
             "Autoupdate", "Updater.app", "Sparkle.framework",
+            "Contents/Helpers/batteryhog-gate",
             "Contents/MacOS/BatteryHog",
         ):
             self.assertIn(target, helper)
@@ -146,10 +175,45 @@ class UpdaterContractTests(unittest.TestCase):
         )
         self.assertIn("brew upgrade --cask luke-fairbanks/tap/battery-hog", self.swift)
 
-    def test_update_consent_is_not_mirrored_to_python_settings(self):
-        backend = (ROOT / "battery_hog.py").read_text(encoding="utf-8")
-        self.assertNotRegex(backend, r'["\']updates["\']\s*:')
+    def test_update_consent_is_not_mirrored_to_monitoring_settings(self):
+        defaults = self.stores.split("static var defaults", 1)[1].split("init(dataDirectory", 1)[0]
+        self.assertNotRegex(defaults, r'["\']updates["\']\s*:')
+        self.assertNotIn("automaticallyChecksForUpdates", self.stores)
+        self.assertNotIn('"/api/updates"', self.backend)
         self.assertIn("automaticallyChecksForUpdates = enabled", self.swift)
+        self.assertIn("SPUStandardUpdaterController", self.swift)
+
+    def test_native_dashboard_bridge_stays_local_and_main_frame_only(self):
+        self.assertIn("Network requests are disabled in Battery Hog", self.swift)
+        self.assertNotIn("networkFetch", self.swift)
+        self.assertIn("isTrustedDashboardMessage(message)", self.swift)
+        self.assertIn("message.frameInfo.isMainFrame", self.swift)
+        self.assertIn('["GET", "POST"].contains(method)', self.swift)
+        self.assertIn("JSONSerialization.isValidJSONObject(body)", self.swift)
+        self.assertIn("64 * 1024", self.swift)
+        self.assertIn("navigationAction.navigationType == .linkActivated", self.swift)
+        self.assertIn("navigationAction.sourceFrame.isMainFrame", self.swift)
+
+    def test_native_menu_quit_carries_the_exact_process_path(self):
+        represented = self.swift.split('q.representedObject = ["name": name,', 1)[1].split(
+            "sub.addItem(q)", 1
+        )[0]
+        self.assertIn('"path": p["path"] as? String ?? ""', represented)
+        post = self.swift.split('backendPOST("/api/kill"', 1)[1].split("])\n", 1)[0]
+        self.assertIn('"path": d["path"] ?? ""', post)
+
+    def test_agent_gate_uses_stable_locking_and_atomic_registry_replacement(self):
+        self.assertIn('appendingPathComponent("agent-gate.lock")', self.gate_store)
+        self.assertIn("try JSONValue.write(value, to: registryURL)", self.gate_store)
+        self.assertNotIn("truncateFile", self.gate_store)
+        self.assertIn('entry["child_identity"]', self.gate_store)
+        self.assertIn("processIdentity(pid) == expected", self.gate_store)
+        self.assertIn("processGroupIsAlive", self.gate_store)
+        self.assertIn("childPID: wrapperPID", self.gate)
+        self.assertIn("executeReplacingSelf(prepared.command", self.gate)
+        self.assertNotIn("--battery-hog-internal-child", self.gate)
+        self.assertNotIn("makeSignalSource", self.gate)
+        self.assertIn("pythonScriptArgument(processArguments(pid))", self.gate_store)
 
     def test_native_state_explicitly_clears_stale_update_details(self):
         for key in ("latestVersion", "lastChecked", "message", "error"):

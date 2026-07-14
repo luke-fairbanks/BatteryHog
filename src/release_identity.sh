@@ -41,6 +41,7 @@ require_battery_hog_bundle_team() {
         "$sparkle_bin/Autoupdate"
         "$sparkle_bin/Updater.app"
         "$framework"
+        "$app/Contents/Helpers/batteryhog-gate"
         "$app/Contents/MacOS/BatteryHog"
         "$app"
     )

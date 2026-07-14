@@ -168,7 +168,7 @@ class DashboardContractTests(unittest.TestCase):
                 )
         self.assertIn("[data-jump]", self.script)
         self.assertIn("dataset.jump", self.script)
-        for hook in ("data-name", "data-bundle", "data-pids"):
+        for hook in ("data-name", "data-path", "data-bundle", "data-pids"):
             self.assertIn(hook, self.script)
 
         inline_handlers = [
@@ -183,11 +183,38 @@ class DashboardContractTests(unittest.TestCase):
         self.attrs_for("procList")
         self.assertRegex(self.script, r"querySelectorAll\(\s*[\"']\.prow[\"']\s*\)")
         self.assertRegex(self.script, r"existing\.set\(\s*el\.dataset\.key\s*,\s*el\s*\)")
-        self.assertRegex(self.script, r"el\.dataset\.key\s*=\s*p\.name")
+        self.assert_function("processKey")
+        self.assertRegex(self.script, r"const\s+key\s*=\s*processKey\(p\)")
+        self.assertRegex(self.script, r"el\.dataset\.key\s*=\s*key")
+        self.assertRegex(self.script, r"qb\.dataset\.path\s*=")
         self.assertRegex(self.script, r"qb\.dataset\.bundle\s*=")
         self.assertRegex(self.script, r"qb\.dataset\.pids\s*=")
         self.assert_function("delegatedKill")
         self.assert_function("killProc")
+        self.assertRegex(self.script, r"JSON\.stringify\(\{name,path,bundle,pids\}\)")
+
+    def test_dashboard_declares_a_local_only_content_policy(self):
+        policies = [
+            attrs.get("content", "")
+            for tag, attrs in self.elements
+            if tag == "meta" and attrs.get("http-equiv", "").lower()
+            == "content-security-policy"
+        ]
+        self.assertEqual(len(policies), 1)
+        self.assertIn("default-src 'none'", policies[0])
+        self.assertIn("connect-src 'none'", policies[0])
+        self.assertIn("img-src appicon: data:", policies[0])
+
+    def test_app_impact_is_clearly_labeled_as_an_estimate(self):
+        self.assertIn("Estimated impact", self.html)
+        self.assertIn("Relative CPU + memory estimate", self.html)
+        self.assertIn("not per-app watts", self.html)
+        for misleading_label in (
+            "Energy impact", "Energy leaders", "Ranked by impact",
+            "biggest battery user", "Biggest draws right now", '+" impact"',
+        ):
+            with self.subTest(label=misleading_label):
+                self.assertNotIn(misleading_label, self.html)
 
     def test_history_chart_keeps_svg_and_range_contracts(self):
         tag, svg = self.attrs_for("histSvg")
@@ -203,6 +230,11 @@ class DashboardContractTests(unittest.TestCase):
         self.assertTrue({"24h", "10d"}.issubset(ranges))
         self.assertIn('/api/history?range=', self.script)
         self.assertRegex(self.script, r"\$\(\s*[\"']#histSvg[\"']\s*\)")
+        self.assertIn("data.refreshing", self.script)
+        self.assertIn("pendingSettingVersions", self.script)
+        self.assertRegex(self.script, r"clearPendingSettingsPatch\(\s*patch\s*,\s*version\s*\)")
+        self.assertIn("hist.data.stale", self.script)
+        self.assertRegex(self.script, r"setTimeout\(\s*\(\)\s*=>\s*loadHistory\(undefined,true\)")
 
     def test_agent_heat_and_settings_control_contracts(self):
         required_ids = {
@@ -229,11 +261,13 @@ class DashboardContractTests(unittest.TestCase):
         self.assertTrue({"percent", "watts", "time", "hog", "dev"}.issubset(menubar))
 
         for name in ("toggleAgentMode", "copyGateCommand", "toggleHeatAlerts",
-                     "applyPendingSettings", "setMenubar"):
+                     "applyPendingSettings", "saveSettings", "setMenubar"):
             with self.subTest(function=name):
                 self.assert_function(name)
         self.assertRegex(self.script, r"pendingSettings\.heat")
-        self.assertRegex(self.script, r"JSON\.stringify\(\s*\{\s*heat\s*:")
+        self.assertRegex(self.script, r"saveSettings\(\s*\{\s*heat\s*:")
+        self.assertIn("if(!r.ok||j.ok===false)", self.script)
+        self.assertIn("clearPendingSettingsPatch(patch,version)", self.script)
 
     def test_native_software_update_card_and_bridge_contracts(self):
         required_ids = {
@@ -299,7 +333,7 @@ class DashboardContractTests(unittest.TestCase):
         )
         self.assertIsNotNone(setter)
         self.assertNotIn("/api/settings", setter.group(0),
-                         "Sparkle preferences must not be posted to Python")
+                         "Sparkle preferences must not be posted as monitoring settings")
 
     def test_javascript_id_references_have_static_targets(self):
         # Catch accidental removal/renaming of a live target during a visual rewrite.

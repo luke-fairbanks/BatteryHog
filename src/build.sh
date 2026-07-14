@@ -9,10 +9,11 @@ SPARKLE_ROOT="$(bash "$ROOT/src/fetch_sparkle.sh")"
 APP="$ROOT/Battery Hog.app"
 C="$APP/Contents"
 SWIFT_TARGET="${SWIFT_TARGET:-arm64-apple-macosx11.0}"
+source "$ROOT/src/native_build.sh"
 
 echo "==> Cleaning previous build"
 rm -rf "$APP"
-mkdir -p "$C/MacOS" "$C/Resources" "$C/Frameworks"
+mkdir -p "$C/MacOS" "$C/Resources" "$C/Frameworks" "$C/Helpers"
 
 echo "==> Building icon (.icns)"
 swift make_icon.swift >/dev/null
@@ -34,25 +35,21 @@ if ! iconutil -c icns "$ICONSET" -o "$C/Resources/AppIcon.icns"; then
 fi
 
 echo "==> Compiling Swift app"
-swiftc -O -target "$SWIFT_TARGET" BatteryHogApp.swift -o "$C/MacOS/BatteryHog" \
-    -F "$SPARKLE_ROOT" -framework Sparkle \
-    -framework Cocoa -framework WebKit -framework UserNotifications \
-    -Xlinker -rpath -Xlinker '@loader_path/../Frameworks'
+compile_battery_hog_native "$C"
 
 echo "==> Assembling bundle"
 cp Info.plist "$C/Info.plist"
 stamp_bundle_version "$C/Info.plist"
 ditto "$SPARKLE_ROOT/Sparkle.framework" "$C/Frameworks/Sparkle.framework"
 cp "$SPARKLE_ROOT/LICENSE" "$C/Resources/Sparkle-LICENSE.txt"
-cp "$ROOT/battery_hog.py" "$C/Resources/battery_hog.py"
-cp "$ROOT/batteryhog_workloads.py" "$C/Resources/batteryhog_workloads.py"
-cp "$ROOT/batteryhog_gate.py" "$C/Resources/batteryhog_gate.py"
-chmod +x "$C/Resources/batteryhog_gate.py"
 cp "$ROOT/dashboard.html" "$C/Resources/dashboard.html"
 printf 'APPL????' > "$C/PkgInfo"
 
 echo "==> Ad-hoc code signing"
-codesign --force --deep --sign - "$APP" >/dev/null 2>&1 || echo "   (codesign skipped)"
+codesign --force --sign - "$C/Helpers/batteryhog-gate" >/dev/null 2>&1 || true
+codesign --force --sign - "$C/MacOS/BatteryHog" >/dev/null 2>&1 || true
+codesign --force --sign - "$APP" >/dev/null 2>&1 || echo "   (codesign skipped)"
+codesign --deep --verify --strict "$APP" >/dev/null 2>&1 || echo "   (codesign verification skipped)"
 
 echo "==> Installing to /Applications"
 rm -rf "/Applications/Battery Hog.app"

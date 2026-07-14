@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src appicon: data:; connect-src 'none';">
 <title>Battery Hog</title>
 <style>
   :root{
@@ -380,7 +381,7 @@
   @keyframes skeleton-pulse{0%,100%{opacity:.52}50%{opacity:1}}
   @media (prefers-reduced-motion:reduce){.loading-spinner:after,.skel{animation:none}.loading-screen{transition:none}}
 
-  /* top energy users on overview */
+  /* top estimated app contributors on overview */
   .mini-list{display:flex;flex-direction:column}
   .mini-row{display:flex;align-items:center;gap:11px;padding:10px 8px;margin:0 -8px;border-radius:8px;border-top:1px solid var(--line);transition:background .12s}
   .mini-row:first-child{border-top:none}
@@ -477,7 +478,7 @@
   .hist-chart{width:100%;margin-top:8px}
   .hist-chart svg{width:100%;display:block}
 
-  /* PROCESS TABLE (dedicated Impact column from hero-cta) */
+  /* PROCESS TABLE (dedicated Estimated Impact column from hero-cta) */
   .pthead{
     display:grid;grid-template-columns:30px 2.1fr 1.15fr 1.15fr 1.15fr 84px;
     column-gap:0;padding:16px 22px 12px;align-items:stretch;
@@ -490,7 +491,7 @@
     column-gap:0;padding:12px 22px;align-items:stretch;
     border-top:1px solid var(--line);transition:background .1s;
   }
-  /* cell layout + vertical column dividers (between Application | Impact | CPU | Memory | Action) */
+  /* cell layout + vertical column dividers (between Application | Estimated Impact | CPU | Memory | Action) */
   .pthead>*,.prow>*{display:flex;align-items:center;padding:0 13px;min-width:0}
   .pthead>*:first-child,.prow>*:first-child{padding:0}
   .pthead>*:nth-child(n+3),.prow>*:nth-child(n+3){border-left:1px solid var(--line)}
@@ -1066,7 +1067,7 @@
           </div>
           <div class="card telemetry-cell" style="--signal:var(--amber)">
             <div class="telemetry-label">Top app now</div>
-            <div><div class="telemetry-value" id="telemetryTopApp">—</div><div class="telemetry-sub" id="telemetryTopCpu">No notable draw</div></div>
+            <div><div class="telemetry-value" id="telemetryTopApp">—</div><div class="telemetry-sub" id="telemetryTopCpu">No notable impact</div></div>
           </div>
         </div>
 
@@ -1087,7 +1088,7 @@
             <div class="sg-list" id="sgList"></div>
           </div>
           <div class="card current-top-card">
-            <div class="current-top-head"><div class="sec-title">Energy leaders</div><button class="link-btn" data-jump="processes">Open Apps</button></div>
+            <div class="current-top-head"><div class="sec-title">Estimated impact</div><button class="link-btn" data-jump="processes">Open Apps</button></div>
             <div class="mini-list" id="topUsers"></div>
           </div>
         </div>
@@ -1101,18 +1102,18 @@
           <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.2"/><circle cx="4" cy="12" r="1.2"/><circle cx="4" cy="18" r="1.2"/></svg></div>
           <div>
             <div class="page-title">Apps</div>
-            <div class="page-sub" id="prSub">Ranked by impact</div>
+            <div class="page-sub" id="prSub">Relative CPU + memory estimate · not per-app watts</div>
           </div>
         </div>
         <div class="seg" id="sortSeg" role="radiogroup" aria-label="Sort processes">
-          <button data-sort="score" class="on" role="radio" aria-checked="true">Energy</button>
+          <button data-sort="score" class="on" role="radio" aria-checked="true">Estimated</button>
           <button data-sort="cpu" role="radio" aria-checked="false">CPU</button>
           <button data-sort="mem_mb" role="radio" aria-checked="false">Memory</button>
         </div>
       </div>
       <div class="card table-card">
         <div class="pthead">
-          <span style="justify-content:center">#</span><span>Application</span><span style="justify-content:center">Energy impact</span><span style="justify-content:center">CPU</span><span style="justify-content:center">Memory</span><span style="justify-content:center">Action</span>
+          <span style="justify-content:center">#</span><span>Application</span><span style="justify-content:center" title="Relative estimate from current CPU and memory; not per-app watts">Estimated impact</span><span style="justify-content:center">CPU</span><span style="justify-content:center">Memory</span><span style="justify-content:center">Action</span>
         </div>
         <div id="procList"></div>
       </div>
@@ -1290,7 +1291,7 @@
           <div id="sleepList"></div>
         </div>
         <div class="card card-pad">
-          <div class="sec-title">Biggest draws right now</div>
+          <div class="sec-title">Highest estimated impact right now</div>
           <div id="insTop"></div>
         </div>
       </div>
@@ -1315,7 +1316,7 @@
             <div class="set-row" data-mb="percent"><div class="set-row-t"><div class="set-row-title">Battery percentage</div><div class="set-row-sub">e.g. 100%</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
             <div class="set-row" data-mb="watts"><div class="set-row-t"><div class="set-row-title">Power draw</div><div class="set-row-sub">live wattage when on battery, e.g. 10W</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
             <div class="set-row" data-mb="time"><div class="set-row-t"><div class="set-row-title">Time remaining</div><div class="set-row-sub">e.g. 5:35</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
-            <div class="set-row" data-mb="hog"><div class="set-row-t"><div class="set-row-title">Top app</div><div class="set-row-sub">biggest battery user + its CPU</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
+            <div class="set-row" data-mb="hog"><div class="set-row-t"><div class="set-row-title">Top app</div><div class="set-row-sub">highest estimated impact + its CPU</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
             <div class="set-row" data-mb="dev"><div class="set-row-t"><div class="set-row-title">Development load</div><div class="set-row-sub">active projects + heavy jobs</div></div><div class="switch" role="switch" aria-checked="false" tabindex="0"><span class="knob"></span></div></div>
           </div>
         </div>
@@ -1375,7 +1376,7 @@ const BAT_C=2*Math.PI*80;      // battery ring circumference
 const MEM_C=251.3;             // semicircle arc length (pi * 80)
 const SCAN_C=2*Math.PI*74;     // scan orb circumference
 
-let state={ data:null, room:"overview", sort:"score", lastTs:null, energy:null, measuring:false, statsInFlight:false, powerHistory:[], pendingMute:new Set(), pendingUnmute:false, pendingSettings:{}, updates:{requested:false,received:false,installMethod:"direct",automaticChecks:false,status:"idle"} };
+let state={ data:null, room:"overview", sort:"score", lastTs:null, energy:null, measuring:false, statsInFlight:false, powerHistory:[], confirmedIgnored:[], confirmedIgnoredReady:false, pendingIgnoreOps:[], nextIgnoreOp:0, ignoreVersion:0, confirmedIgnoreVersion:0, confirmedSettings:null, pendingSettings:{}, pendingSettingVersions:{}, settingsVersion:0, confirmedSettingsVersion:0, updates:{requested:false,received:false,installMethod:"direct",automaticChecks:false,status:"idle"} };
 
 /* ---------- helpers ---------- */
 function fmtGB(g){ return (g==null)?"—":(g>=10?g.toFixed(1):g.toFixed(2))+" GB"; }
@@ -1387,6 +1388,11 @@ function colorAt(level){ return level==="high"?"var(--red)":level==="med"?"var(-
 function levelLabel(level){ return level==="high"?"High":level==="med"?"Med":"Low"; }
 function fmtW(v){ const n=Number(v); return isFinite(n)?n.toFixed(2):"—"; }
 function appColor(name){ let h=0; for(let i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))>>>0; return palette[h%palette.length]; }
+function processKey(p){ return String(p.name||"")+"\u241f"+String(p.path||""); }
+function cloneSettings(value){
+  const s=value||{};
+  return Object.assign({},s,{menubar:Object.assign({},s.menubar||{}),dev:Object.assign({},s.dev||{}),heat:Object.assign({},s.heat||{})});
+}
 function initials(name){
   const w=name.replace(/[^A-Za-z0-9 ]/g,"").trim().split(/\s+/).filter(Boolean);
   if(!w.length) return name.slice(0,2).toUpperCase();
@@ -1465,21 +1471,21 @@ function renderCurrentSummary(){
     ico.innerHTML=appIconHTML(top,46);
     title.textContent=top.name+" is working hardest";
     copy.textContent="It is using "+Math.round(top.cpu||0)+"% CPU and "+fmtMem(top.mem_mb)+" of memory in the latest sample.";
-    meta.textContent=levelLabel(top.level)+" impact · "+Math.round(top.cpu||0)+"% cpu";
+    meta.textContent=levelLabel(top.level)+" estimated impact · "+Math.round(top.cpu||0)+"% cpu";
     action.textContent="Open Apps"; action.dataset.jump="processes";
-    signal.className="pill "+(top.level==="high"?"high":top.level==="med"?"elevated":"normal"); signal.textContent=levelLabel(top.level)+" impact";
+    signal.className="pill "+(top.level==="high"?"high":top.level==="med"?"elevated":"normal"); signal.textContent=levelLabel(top.level)+" estimated impact";
   }else{
     ico.innerHTML='<span class="work-glyph" style="width:46px;height:46px">✓</span>';
     title.textContent="Your Mac is running quietly";
     copy.textContent="Nothing stands out as a meaningful battery contributor in this sample.";
-    meta.textContent="No notable draw"; action.textContent="Open Apps"; action.dataset.jump="processes";
+    meta.textContent="No notable impact"; action.textContent="Open Apps"; action.dataset.jump="processes";
     signal.className="pill normal"; signal.textContent="Calm";
   }
   const projects=Number(dev.projects)||0, workers=Number(dev.active_workers||dev.workers)||0;
   $("#telemetryDev").textContent=projects+" project"+(projects===1?"":"s");
   $("#telemetryWorkers").textContent=workers?workers+" active worker"+(workers===1?"":"s"):"No heavy jobs detected";
   $("#telemetryTopApp").textContent=top?top.name:"Quiet";
-  $("#telemetryTopCpu").textContent=top?Math.round(top.cpu||0)+"% CPU · "+levelLabel(top.level)+" impact":"No notable draw";
+  $("#telemetryTopCpu").textContent=top?Math.round(top.cpu||0)+"% CPU · "+levelLabel(top.level)+" estimated impact":"No notable impact";
 }
 const boltSVG='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>';
 const checkSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -1496,6 +1502,7 @@ function lvlIconFor(level){ return lvlIcon[level]||lvlIcon.low; }
 /* ---------- room switching ---------- */
 function go(room){
   state.room=room;
+  if(room!=="health" && typeof hist!=="undefined" && hist.retry){ clearTimeout(hist.retry); hist.retry=null; }
   $$(".nav-item").forEach(n=>{
     const on=n.dataset.room===room;
     n.classList.toggle("active",on);
@@ -1536,7 +1543,7 @@ function delegatedKill(e){
   const btn=e.target.closest("[data-act='kill']"); if(!btn) return;
   let pids=[];
   try{ pids=JSON.parse(btn.dataset.pids||"[]"); }catch(_){ pids=[]; }
-  killProc(btn.dataset.name||"", btn.dataset.bundle==="1", pids);
+  killProc(btn.dataset.name||"", btn.dataset.path||"", btn.dataset.bundle==="1", pids);
 }
 $("#topUsers").addEventListener("click",delegatedKill);
 $("#procList").addEventListener("click",delegatedKill);
@@ -1559,7 +1566,7 @@ $$('#page-settings .set-row[data-mb] .switch').forEach(sw=>{
 })();
 (function(){ const thr=$("#thrRange"); if(!thr) return;
   thr.addEventListener("input",()=>{ const v=parseInt(thr.value,10)||20; $("#thrVal").textContent=v+"%"; state.pendingSettings.low_threshold=v; applyPendingSettings(); });
-  thr.addEventListener("change",()=>{ const v=parseInt(thr.value,10)||20; state.pendingSettings.low_threshold=v; fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({low_threshold:v})}).catch(()=>{}); });
+  thr.addEventListener("change",()=>{ const v=parseInt(thr.value,10)||20; state.pendingSettings.low_threshold=v; saveSettings({low_threshold:v}); });
 })();
 (function(){ const sw=$("#updateAutomaticSwitch"); if(!sw) return;
   const t=()=>setAutomaticUpdateChecks(sw.getAttribute("aria-checked")!=="true");
@@ -1586,47 +1593,60 @@ $("#sgList").addEventListener("click",e=>{
    updates instantly and an in-flight stale poll can't flash the app back */
 function applyPending(){
   if(!state.data) return;
-  const base = state.pendingUnmute ? [] : (state.data.ignored||[]);
-  const s=new Set(base); state.pendingMute.forEach(n=>s.add(n));
+  const s=new Set(Array.isArray(state.confirmedIgnored)?state.confirmedIgnored:[]);
+  state.pendingIgnoreOps.forEach(op=>{
+    if(op.reset) s.clear();
+    else if(op.on&&op.name) s.add(op.name);
+    else if(op.name) s.delete(op.name);
+  });
   state.data.ignored=[...s];
 }
 async function muteApp(name,on){
-  if(on){ if(name) state.pendingMute.add(name); }
-  else { state.pendingMute.clear(); state.pendingUnmute=true; }
+  const op={id:++state.nextIgnoreOp,version:++state.ignoreVersion,name:name||"",on:!!on,reset:!on};
+  state.pendingIgnoreOps.push(op);
   applyPending();
   renderSuggestions();                       // instant — no waiting on the network
   toast(on?("Won't suggest quitting "+name+" again"):"Suggestions reset");
   try{
     const r=await fetch("/api/ignore",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(on?{name:name,on:true}:{reset:true})});
-    const j=await r.json();
-    if(j&&j.ignored){
-      if(!on) state.pendingUnmute=false;
-      state.pendingMute.clear();
-      if(state.data){ state.data.ignored=j.ignored; renderSuggestions(); }
+    let j={}; try{ j=await r.json(); }catch(_){}
+    state.pendingIgnoreOps=state.pendingIgnoreOps.filter(item=>item.id!==op.id);
+    if(Array.isArray(j.ignored)&&op.version>=state.confirmedIgnoreVersion){
+      state.confirmedIgnored=j.ignored.slice(); state.confirmedIgnoredReady=true;
+      state.confirmedIgnoreVersion=op.version;
     }
-  }catch(e){}
+    applyPending(); renderSuggestions();
+    if(!r.ok||j.ok===false) toast(j.message||"Couldn't save that preference.");
+  }catch(e){
+    state.pendingIgnoreOps=state.pendingIgnoreOps.filter(item=>item.id!==op.id);
+    applyPending(); renderSuggestions(); toast("Couldn't save that preference.");
+    fetchStats();
+  }
 }
 
 /* ---------- fetch ---------- */
 async function fetchStats(){
   if(state.statsInFlight) return;
   state.statsInFlight=true;
+  const settingsVersion=state.settingsVersion, ignoreVersion=state.ignoreVersion;
   try{
     const r=await fetch("/api/stats",{cache:"no-store"});
     const d=await r.json();
     state.data=d; state.lastTs=Date.now(); recordPowerSample(d);
-    // drop optimistic mutes the server has now confirmed; keep the rest
-    const srv=new Set(d.ignored||[]);
-    state.pendingMute.forEach(n=>{ if(srv.has(n)) state.pendingMute.delete(n); });
-    if(state.pendingUnmute && srv.size===0) state.pendingUnmute=false;
+    if((ignoreVersion===state.ignoreVersion||!state.confirmedIgnoredReady)&&
+       ignoreVersion>=state.confirmedIgnoreVersion){
+      state.confirmedIgnored=Array.isArray(d.ignored)?d.ignored.slice():[];
+      state.confirmedIgnoredReady=true;
+      state.confirmedIgnoreVersion=ignoreVersion;
+    }
     applyPending();
     // same for pending settings (alerts / menubar / threshold)
-    const sv=d.settings||{}, ps=state.pendingSettings;
-    if("alerts" in ps && sv.alerts===ps.alerts) delete ps.alerts;
-    if("low_threshold" in ps && sv.low_threshold===ps.low_threshold) delete ps.low_threshold;
-    if(ps.menubar){ const mb=sv.menubar||{}; for(const k in ps.menubar){ if(mb[k]===ps.menubar[k]) delete ps.menubar[k]; } if(!Object.keys(ps.menubar).length) delete ps.menubar; }
-    if(ps.dev){ const dv=sv.dev||{}; for(const k in ps.dev){ if(dv[k]===ps.dev[k]) delete ps.dev[k]; } if(!Object.keys(ps.dev).length) delete ps.dev; }
-    if(ps.heat){ const heat=sv.heat||{}; for(const k in ps.heat){ if(heat[k]===ps.heat[k]) delete ps.heat[k]; } if(!Object.keys(ps.heat).length) delete ps.heat; }
+    const sv=d.settings||{};
+    if((settingsVersion===state.settingsVersion||!state.confirmedSettings)&&
+       settingsVersion>=state.confirmedSettingsVersion){
+      state.confirmedSettings=cloneSettings(sv);
+      state.confirmedSettingsVersion=settingsVersion;
+    }
     applyPendingSettings();
     render();
     document.body.classList.add("loaded");
@@ -1754,7 +1774,7 @@ function renderLowPower(){
   }
 }
 
-/* ---------- top energy users ---------- */
+/* ---------- top estimated app contributors ---------- */
 function renderTopUsers(){
   const top=(state.data.processes||[]).slice(0,4);
   const maxScore=top.length?Math.max(...top.map(p=>p.score||0),1):1;
@@ -1762,7 +1782,7 @@ function renderTopUsers(){
     const w=Math.max(6,Math.round((p.score||0)/maxScore*100));
     const action=p.protected
       ? `<span class="sys-tag">${lockSVG}System</span>`
-      : `<button class="btn quit" data-act="kill" data-name="${esc(p.name)}" data-bundle="${p.bundle?1:0}" data-pids="${esc(JSON.stringify(p.pids||[]))}">Quit</button>`;
+      : `<button class="btn quit" data-act="kill" data-name="${esc(p.name)}" data-path="${esc(p.path||"")}" data-bundle="${p.bundle?1:0}" data-pids="${esc(JSON.stringify(p.pids||[]))}">Quit</button>`;
     return `<div class="mini-row">
       <span class="rank">${i+1}</span>
       ${appIconHTML(p,30)}
@@ -1791,13 +1811,14 @@ function renderQuick(){
 function setDevSetting(key,value){
   state.pendingSettings.dev=Object.assign({},state.pendingSettings.dev||{},{[key]:value});
   applyPendingSettings(); renderWorkloads();
-  fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dev:{[key]:value}})}).catch(()=>{});
+  return saveSettings({dev:{[key]:value}});
 }
 function toggleAgentMode(){
   const dev=((state.data||{}).settings||{}).dev||{};
   const want=!dev.enabled;
-  setDevSetting("enabled",want);
-  toast(want?"Agent Mode on — gated commands coordinate on battery":"Agent Mode off — commands pass through normally");
+  setDevSetting("enabled",want).then(ok=>{
+    if(ok) toast(want?"Agent Mode on — gated commands coordinate on battery":"Agent Mode off — commands pass through normally");
+  });
 }
 async function copyGateCommand(){
   const command=(((state.data||{}).gate||{}).command||"")+" <command>";
@@ -1865,8 +1886,8 @@ function renderWorkloads(){
     $("#agentModeSub").textContent="Advisory only. Turn on to queue heavy commands on battery.";
   }
   const gateRaw=(gate.command||"").trim();
-  const gateMarker=gateRaw.lastIndexOf("batteryhog_gate.py");
-  const gateDisplay=gateMarker>=0?"…/"+gateRaw.slice(gateMarker):gateRaw;
+  const gateMarker=gateRaw.lastIndexOf("batteryhog-gate");
+  const gateDisplay=gateMarker>=0?"…/batteryhog-gate --":gateRaw;
   $("#gateCommand").textContent=gateDisplay?gateDisplay+" <command>":"—";
   $("#gateCommand").title=gateRaw?gateRaw+" <command>":"";
   const active=gate.active||[], queued=gate.queued||[], entries=active.concat(queued);
@@ -1918,11 +1939,11 @@ function renderAlertToggle(){
   btn.setAttribute("aria-pressed",on?"true":"false");
   const lbl=$("#alertLbl"); if(lbl) lbl.textContent=on?"Alerts on":"Alerts off";
 }
-/* user settings changes stay applied until the server echoes them back, so an
+/* User settings changes stay applied until the native backend echoes them back, so an
    in-flight /api/stats poll can't revert a toggle the instant you flip it */
 function applyPendingSettings(){
   if(!state.data) return;
-  state.data.settings=state.data.settings||{};
+  state.data.settings=cloneSettings(state.confirmedSettings||state.data.settings||{});
   const ps=state.pendingSettings;
   if("alerts" in ps) state.data.settings.alerts=ps.alerts;
   if("low_threshold" in ps) state.data.settings.low_threshold=ps.low_threshold;
@@ -1930,20 +1951,74 @@ function applyPendingSettings(){
   if(ps.dev) state.data.settings.dev=Object.assign({},state.data.settings.dev||{},ps.dev);
   if(ps.heat) state.data.settings.heat=Object.assign({},state.data.settings.heat||{},ps.heat);
 }
+function tagPendingSettingsPatch(patch,version){
+  const ps=state.pendingSettings, versions=state.pendingSettingVersions;
+  for(const key in patch){
+    const sent=patch[key];
+    if(sent&&typeof sent==="object"&&!Array.isArray(sent)){
+      const pending=ps[key]; if(!pending) continue;
+      versions[key]=versions[key]||{};
+      for(const child in sent){ if(pending[child]===sent[child]) versions[key][child]=version; }
+    }else if(ps[key]===sent){ versions[key]=version; }
+  }
+}
+function clearPendingSettingsPatch(patch,version){
+  const ps=state.pendingSettings, versions=state.pendingSettingVersions;
+  for(const key in patch){
+    const sent=patch[key];
+    if(sent&&typeof sent==="object"&&!Array.isArray(sent)){
+      const pending=ps[key], tagged=versions[key]; if(!pending||!tagged) continue;
+      for(const child in sent){
+        if(tagged[child]===version&&pending[child]===sent[child]){
+          delete pending[child]; delete tagged[child];
+        }
+      }
+      if(!Object.keys(pending).length) delete ps[key];
+      if(!Object.keys(tagged).length) delete versions[key];
+    }else if(versions[key]===version&&ps[key]===sent){
+      delete ps[key]; delete versions[key];
+    }
+  }
+}
+function refreshSettingsViews(){
+  applyPendingSettings(); renderAlertToggle(); renderSettings(); renderWorkloads();
+}
+async function saveSettings(patch){
+  const version=++state.settingsVersion;
+  tagPendingSettingsPatch(patch,version);
+  try{
+    const r=await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(patch)});
+    let j={}; try{ j=await r.json(); }catch(_){}
+    clearPendingSettingsPatch(patch,version);
+    if(j.settings&&version>=state.confirmedSettingsVersion){
+      state.confirmedSettings=cloneSettings(j.settings);
+      state.confirmedSettingsVersion=version;
+    }
+    refreshSettingsViews();
+    if(!r.ok||j.ok===false){ toast(j.message||"Couldn't save that setting."); return false; }
+    return true;
+  }catch(_){
+    clearPendingSettingsPatch(patch,version);
+    refreshSettingsViews();
+    fetchStats();
+    toast("Couldn't save that setting.");
+    return false;
+  }
+}
 async function toggleAlerts(){
   const cur=!!(state.data&&state.data.settings&&state.data.settings.alerts);
   state.pendingSettings.alerts=!cur;
   applyPendingSettings(); renderAlertToggle(); renderSettings();
-  toast(!cur?"Alerts on — including sustained high battery draw":"Alerts off");
-  try{ await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({alerts:!cur})}); }catch(e){}
+  if(await saveSettings({alerts:!cur}))
+    toast(!cur?"Alerts on — including sustained high battery draw":"Alerts off");
 }
 async function toggleHeatAlerts(){
   const heat=(state.data&&state.data.settings&&state.data.settings.heat)||{};
   const on=!heat.enabled;
   state.pendingSettings.heat=Object.assign({},state.pendingSettings.heat||{},{enabled:on});
   applyPendingSettings(); renderSettings();
-  toast(on?"Heat alerts on — macOS may ask for notification permission":"Heat alerts off");
-  try{ await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({heat:{enabled:on}})}); }catch(e){}
+  if(await saveSettings({heat:{enabled:on}}))
+    toast(on?"Heat alerts on — macOS may ask for notification permission":"Heat alerts off");
 }
 
 /* ---------- settings (menu bar + alerts) ---------- */
@@ -1978,12 +2053,12 @@ function renderSettings(){
 function setMenubar(key,on){
   state.pendingSettings.menubar=Object.assign({},state.pendingSettings.menubar||{},{[key]:on});
   applyPendingSettings(); renderSettings();
-  fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({menubar:{[key]:on}})}).catch(()=>{});
+  saveSettings({menubar:{[key]:on}});
 }
 
 /* ---------- native software updates ----------
    These preferences belong to Sparkle/the native shell. They intentionally do
-   not travel through the local Python settings API. */
+   not travel through the native monitoring settings bridge. */
 function nativeUpdatesHandler(){
   return window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.updates;
 }
@@ -2205,7 +2280,7 @@ function renderSuggestions(){
   list.innerHTML=S.slice(0,4).map(s=>{
     let act="";
     if(s.act&&s.act.kill){ const p=s.act.kill;
-      act=`<button class="btn quit sg-btn" data-act="kill" data-name="${esc(p.name)}" data-bundle="${p.bundle?1:0}" data-pids="${esc(JSON.stringify(p.pids||[]))}">${esc(s.act.label)}</button>`;
+      act=`<button class="btn quit sg-btn" data-act="kill" data-name="${esc(p.name)}" data-path="${esc(p.path||"")}" data-bundle="${p.bundle?1:0}" data-pids="${esc(JSON.stringify(p.pids||[]))}">${esc(s.act.label)}</button>`;
     }else if(s.act&&s.act.lpm!==undefined){
       act=`<button class="btn sg-btn" data-act="lpm">${esc(s.act.label)}</button>`;
     }else if(s.act&&s.act.jump){
@@ -2216,7 +2291,7 @@ function renderSuggestions(){
   }).join("")+muted;
 }
 
-/* ---------- processes (sortable, Impact column) ---------- */
+/* ---------- processes (sortable, Estimated Impact column) ---------- */
 function procRowStructure(p){
   return `<span class="rank"></span>`
     +`<span class="pname-cell">${appIconHTML(p,28)}<span class="nm"><div class="t">${esc(p.name)}</div><div class="s"></div></span></span>`
@@ -2242,13 +2317,15 @@ function updateProcRow(el,p,i,maxCpu,maxMem,maxScore){
     act.innerHTML=p.protected?`<span class="sys-tag">${lockSVG}System</span>`
       :`<button class="btn quit" data-act="kill" data-name="${esc(p.name)}">Quit</button>`;
   }
-  if(!p.protected){ const qb=act.querySelector(".quit"); if(qb){ qb.dataset.bundle=p.bundle?1:0; qb.dataset.pids=JSON.stringify(p.pids||[]); } }
+  if(!p.protected){ const qb=act.querySelector(".quit"); if(qb){ qb.dataset.path=p.path||""; qb.dataset.bundle=p.bundle?1:0; qb.dataset.pids=JSON.stringify(p.pids||[]); } }
 }
 function renderProcesses(){
   const d=state.data; if(!d||!d.processes) return;
   const list=[...d.processes].sort((a,b)=>(b[state.sort]||0)-(a[state.sort]||0));
-  const sortLabel={score:"impact",cpu:"CPU",mem_mb:"memory"}[state.sort];
-  $("#prSub").textContent="Ranked by "+sortLabel+" · "+list.length+" apps";
+  const sortLabel={cpu:"CPU",mem_mb:"memory"}[state.sort];
+  $("#prSub").textContent=state.sort==="score"
+    ? "Relative CPU + memory estimate · "+list.length+" apps · not per-app watts"
+    : "Ranked by "+sortLabel+" · "+list.length+" apps";
   const root=$("#procList");
   if(!list.length){ root.innerHTML=`<div class="empty">No processes</div>`; return; }
   const em=root.querySelector(".empty"); if(em) em.remove();
@@ -2260,9 +2337,10 @@ function renderProcesses(){
   const oldPos=new Map(); existing.forEach((el,k)=>oldPos.set(k,el.getBoundingClientRect().top));
   const frag=document.createDocumentFragment(), seen=new Set();
   list.forEach((p,i)=>{
-    seen.add(p.name);
-    let el=existing.get(p.name);
-    if(!el){ el=document.createElement("div"); el.className="prow"; el.dataset.key=p.name; el.innerHTML=procRowStructure(p); }
+    const key=processKey(p);
+    seen.add(key);
+    let el=existing.get(key);
+    if(!el){ el=document.createElement("div"); el.className="prow"; el.dataset.key=key; el.innerHTML=procRowStructure(p); }
     updateProcRow(el,p,i,maxCpu,maxMem,maxScore);
     frag.appendChild(el);
   });
@@ -2283,11 +2361,11 @@ function renderProcesses(){
 }
 
 /* ---------- actions ---------- */
-async function killProc(name,bundle,pids){
+async function killProc(name,path,bundle,pids){
   pids=pids||[];
   if(!window.confirm(`Quit “${name}”?\n\nThis will force-quit ${pids.length>1?pids.length+" processes":"the process"} and may cause unsaved work to be lost.`)) return;
   try{
-    const r=await fetch("/api/kill",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,bundle,pids})});
+    const r=await fetch("/api/kill",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,path,bundle,pids})});
     const res=await r.json();
     if(!res.ok) alert(res.message||"Could not quit process.");
   }catch(e){ alert("Could not quit process."); }
@@ -2343,15 +2421,31 @@ function renderHealth(){
 }
 
 /* ---------- charge history (pmset log) ---------- */
-let hist={ range:"24h", data:null, loading:false };
-async function loadHistory(range){
+let hist={ range:"24h", data:null, loading:false, retry:null, request:0, retries:0, error:false };
+async function loadHistory(range,isRetry=false){
   if(range) hist.range=range;
+  if(!isRetry) hist.retries=0;
+  const request=++hist.request;
+  clearTimeout(hist.retry); hist.retry=null;
+  hist.error=false;
   hist.loading=true; renderHistory();
   try{
     const r=await fetch("/api/history?range="+hist.range,{cache:"no-store"});
-    hist.data=await r.json();
-  }catch(e){}
+    const data=await r.json();
+    if(request!==hist.request) return;
+    hist.data=data;
+  }catch(e){ hist.error=true; }
+  if(request!==hist.request) return;
   hist.loading=false; renderHistory();
+  const needsRetry=hist.error||Boolean(hist.data&&(hist.data.refreshing||hist.data.loading||hist.data.stale));
+  if(needsRetry&&state.room==="health"){
+    const exhausted=hist.retries>=25;
+    const delay=exhausted?300000:(hist.data&&hist.data.refreshing?6500:Math.min(30000,5000*Math.pow(2,Math.min(hist.retries,3))));
+    if(!exhausted) hist.retries++;
+    hist.retry=setTimeout(()=>loadHistory(undefined,true),delay);
+  }else if(!needsRetry){
+    hist.retries=0;
+  }
 }
 function fmtWhen(sec){
   const d=new Date(sec*1000), now=new Date();
@@ -2405,15 +2499,21 @@ function renderHistory(){
   const h=hist.data, has=h&&h.bins&&h.bins.some(Boolean);
   const title=$("#histTitle"), sub=$("#histSub");
   if(!has){
+    const waiting=hist.loading||hist.error||Boolean(h&&(h.loading||h.refreshing));
     svg.setAttribute("viewBox","0 0 760 300"); svg.style.height="300px";
-    svg.innerHTML=`<text x="380" y="150" text-anchor="middle" style="fill:var(--txt-3);font:600 14px -apple-system,system-ui">${hist.loading?"Loading…":"No charge history yet"}</text>`;
+    const emptyLabel=hist.error?"Retrying charge history…":(waiting?"Preparing charge history…":"No charge history yet");
+    svg.innerHTML=`<text x="380" y="150" text-anchor="middle" style="fill:var(--txt-3);font:600 14px -apple-system,system-ui">${emptyLabel}</text>`;
     if(title) title.textContent="Charge history";
-    if(sub) sub.textContent=hist.loading?"Reading power log…":"Battery history appears as macOS logs power events.";
+    if(sub) sub.textContent=hist.error?"Couldn’t refresh yet. Battery Hog will try again.":(waiting?"Scanning macOS power events in the background…":"Battery history appears as macOS logs power events.");
     setStat("#hsNow","—"); setStat("#hsLow","—"); setStat("#hsChg","—");
     return;
   }
   if(title) title.textContent = h.last_full ? "Last charged to 100%" : "Charge history";
-  if(sub) sub.textContent = h.last_full ? fmtWhen(h.last_full) : "No full charge in this period";
+  if(sub){
+    const detail=h.last_full ? fmtWhen(h.last_full) : "No full charge in this period";
+    sub.textContent=(hist.error||h.stale) ? detail+" · Refresh pending…"
+      : (h.refreshing ? detail+" · Refreshing…" : detail);
+  }
 
   const G="#30d158";
   // render at the host's real pixel width with a fixed height (1 unit = 1px),

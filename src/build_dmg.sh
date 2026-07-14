@@ -144,6 +144,22 @@ hdiutil convert "$RW_DMG" \
     -imagekey zlib-level=9 \
     -ov \
     -o "$DMG" >/dev/null
-hdiutil verify "$DMG" >/dev/null
+
+# On newer macOS releases hdiutil can return while the UDZO trailer is still
+# being finalized. Do not hand back a transient 512-byte image or fail a good
+# build on the first "resource temporarily unavailable" verification attempt.
+DMG_VERIFIED=0
+for _ in $(seq 1 80); do
+    if hdiutil verify "$DMG" >/dev/null 2>&1; then
+        DMG_VERIFIED=1
+        break
+    fi
+    sleep 0.25
+done
+if [ "$DMG_VERIFIED" != "1" ]; then
+    echo "Compressed installer image did not become verifiable: $DMG" >&2
+    hdiutil verify "$DMG" >&2 || true
+    exit 1
+fi
 
 echo "==> Styled DMG: $DMG"

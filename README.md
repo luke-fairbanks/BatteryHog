@@ -5,9 +5,9 @@
 
 ![Battery Hog overview](docs/overview.png)
 
-Battery Hog is a small, fast menu-bar + window app for Apple Silicon Macs. It shows live battery, memory, and per-app energy use, keeps a real charge history, estimates *why* your battery drains fast, and lets you quit the worst offenders. Monitoring stays **100% local** and is read straight from built-in macOS tools.
+Battery Hog is a small, fast menu-bar + window app for Apple Silicon Macs. It shows live system-wide battery power and memory, ranks apps with a relative CPU-and-memory impact estimate, keeps a real charge history, estimates *why* your battery drains fast, and lets you quit likely contributors. The app estimate is a comparison aid, not a measurement of per-app watts. Monitoring stays **100% local** and is read straight from built-in macOS tools.
 
-No Electron: a tiny Swift/WebKit shell around a Python standard-library backend and an HTML/CSS dashboard, with Sparkle bundled for signed, opt-in software updates.
+No Electron and no runtime dependencies: the monitor, menu-bar app, and optional Agent Mode helper are native Swift. The interface is a bundled HTML/CSS dashboard hosted by WebKit, with Sparkle included for signed, opt-in software updates.
 
 ## Download
 
@@ -27,8 +27,8 @@ Requires macOS 11+ on Apple Silicon.
 
 ## Features
 
-- **Overview** — battery ring (state-colored), **live power draw in watts**, memory-pressure gauge, top energy users with real app icons, and a Low Power Mode toggle.
-- **Processes** — sortable list (Impact / CPU / Memory) of apps grouped by process, with a Quit button. System processes are protected; the header stays pinned while rows scroll.
+- **Overview** — battery ring (state-colored), **live system-wide power draw in watts**, memory-pressure gauge, top estimated app contributors with real app icons, and a Low Power Mode toggle.
+- **Processes** — sortable list (Estimated Impact / CPU / Memory) of apps grouped by process, with a Quit button. Estimated Impact is a relative ranking based on current CPU and memory activity, not per-app watts. System processes are protected; the header stays pinned while rows scroll.
 - **Workloads** — groups short-lived Node, Rust, Gradle/Kotlin, CocoaPods, test, scan, and compiler processes by project, including the coding agent that launched them.
 - **Battery** — a **charge-history chart** (Last 24 Hours / Last 10 Days, built from the system power log) plus maximum capacity, condition, cycle count, and temperature.
 - **Insights** — answers *"why does my battery drain so fast?"*: typical drain rate (%/hr), projected runtime per charge, time on battery, charge sessions, and overnight wake-ups.
@@ -41,7 +41,7 @@ Requires macOS 11+ on Apple Silicon.
 
 <p align="center"><img src="docs/battery.png" width="760" alt="Charge history"></p>
 
-<p align="center"><img src="docs/processes.png" width="760" alt="Processes ranked by energy impact"></p>
+<p align="center"><img src="docs/processes.png" width="760" alt="Processes ranked by estimated impact"></p>
 
 ## Battery-aware Agent Mode
 
@@ -50,7 +50,7 @@ page, coding agents can opt into coordination by prefixing a heavyweight command
 the gate command shown in the app:
 
 ```bash
-python3 "/Applications/Battery Hog.app/Contents/Resources/batteryhog_gate.py" -- cargo check
+"/Applications/Battery Hog.app/Contents/Helpers/batteryhog-gate" -- cargo check
 ```
 
 On battery, the gate shares a configurable number of heavy-job lanes across agents and
@@ -120,7 +120,7 @@ The app is not sandboxed and needs no special hardened-runtime entitlements. `sr
 
 ## How it works
 
-The backend reads only built-in macOS tools and exposes them on `127.0.0.1`:
+The in-process Swift monitor reads only built-in macOS tools. Its allow-listed native bridge is available only to the dashboard bundled inside the app; Battery Hog does not open a local server or listening port.
 
 | Data | Source |
 |---|---|
@@ -134,8 +134,7 @@ The backend reads only built-in macOS tools and exposes them on `127.0.0.1`:
 | Agent Mode queue | Local JSON registry under Application Support |
 | Uptime | `sysctl kern.boottime` |
 
-The Swift shell (`src/BatteryHogApp.swift`) hosts the dashboard in a `WKWebView` with a
-translucent sidebar, serves real app icons, and runs the menu-bar item.
+The Swift app hosts the dashboard in a `WKWebView` with a translucent sidebar, serves real app icons, runs the menu-bar item, and shares one native sampling engine between them. Agent Mode uses a separately signed native helper inside the app bundle.
 
 ## Privacy
 

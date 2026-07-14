@@ -4,32 +4,9 @@ import UserNotifications
 import WebKit
 
 // Native shell for Battery Hog:
-//  • a window with a WKWebView showing the dashboard,
-//  • a menu-bar (status) item with the current top battery user + quick actions,
-//  • runs the bundled Python backend (battery_hog.py) as a child process.
-
-func findFreePort() -> Int {
-    let fd = socket(AF_INET, SOCK_STREAM, 0)
-    if fd < 0 { return 8765 }
-    defer { close(fd) }
-    var addr = sockaddr_in()
-    addr.sin_family = sa_family_t(AF_INET)
-    addr.sin_addr.s_addr = inet_addr("127.0.0.1")
-    addr.sin_port = 0
-    let bound = withUnsafePointer(to: &addr) {
-        $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-            bind(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
-        }
-    }
-    if bound != 0 { return 8765 }
-    var info = sockaddr_in()
-    var len = socklen_t(MemoryLayout<sockaddr_in>.size)
-    let got = withUnsafeMutablePointer(to: &info) {
-        $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(fd, $0, &len) }
-    }
-    if got != 0 { return 8765 }
-    return Int(UInt16(bigEndian: info.sin_port))
-}
+//  • a window with a bundled WKWebView dashboard,
+//  • a menu-bar item with the current top estimated contributor + quick actions,
+//  • an in-process Swift monitoring backend exposed only to that dashboard.
 
 // Serves real macOS app icons to the web layer via  appicon://i?p=<bundle-path>
 // NSWorkspace resolves icons for both .icns and asset-catalog apps.
@@ -273,7 +250,8 @@ private struct HeatAggregate {
     var workerNoun: String
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKUIDelegate,
+final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler,
+                         WKScriptMessageHandlerWithReply, WKUIDelegate, WKNavigationDelegate,
                          UNUserNotificationCenterDelegate {
     private let heatNotificationCategory = "BATTERY_HOG_HEAT"
     private let heatOpenAction = "BATTERY_HOG_HEAT_OPEN_WORKLOADS"
@@ -287,8 +265,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     let iconHandler = IconSchemeHandler()
     var window: NSWindow!
     var webView: WKWebView!
-    var py: Process?
-    var port = 8765
+    private var dashboardURL: URL?
+    private var backend: BatteryHogBackend!
     var statusItem: NSStatusItem!
     var pollTimer: Timer?
     var lastLowPower: Bool? = nil
@@ -316,44 +294,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         )
         applyThermalState(currentThermalState, at: Date())
 
-        port = findFreePort()
-        startServer()
+        backend = BatteryHogBackend(configuration: .live())
         buildStatusItem()
         buildWindow()
         updateCoordinator.attach(to: webView)
-        waitForServer(attempt: 0)
+        loadDashboard()
+        startStatsPolling()
         NSApp.activate(ignoringOtherApps: true)
-    }
-
-    // MARK: backend process
-
-    func pythonExecutable() -> String {
-        let paths = ["/usr/bin/python3", "/opt/homebrew/bin/python3", "/usr/local/bin/python3"]
-        for p in paths where FileManager.default.isExecutableFile(atPath: p) { return p }
-        return "/usr/bin/python3"
-    }
-
-    func startServer() {
-        guard let res = Bundle.main.resourcePath else { return }
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: pythonExecutable())
-        p.arguments = [res + "/battery_hog.py", "--port", String(port), "--no-open"]
-        p.currentDirectoryURL = URL(fileURLWithPath: res)
-        var env = ProcessInfo.processInfo.environment
-        let base = "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin"
-        env["PATH"] = base + ":" + (env["PATH"] ?? "")
-        // Preview builds use a separate bundle identifier and isolated settings,
-        // so reviewing a candidate cannot alter the installed release's state.
-        if Bundle.main.bundleIdentifier?.hasSuffix(".preview") == true {
-            let support = FileManager.default.urls(for: .applicationSupportDirectory,
-                                                   in: .userDomainMask).first
-            let previewData = support?.appendingPathComponent("BatteryHogPreview").path
-                ?? NSTemporaryDirectory() + "BatteryHogPreview"
-            env["BATTERY_HOG_DATA_DIR"] = previewData
-            env["BATTERY_HOG_PREVIEW"] = "1"
-        }
-        p.environment = env
-        do { try p.run(); py = p } catch { NSLog("Battery Hog: backend failed: \(error)") }
     }
 
     // MARK: window
@@ -372,6 +319,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let ucc = WKUserContentController()
         ucc.add(self, name: "drag")
         ucc.add(self, name: "updates")
+        ucc.addScriptMessageHandler(self, contentWorld: .page, name: "batteryHogAPI")
+        let apiJS = """
+        (() => {
+          const native = window.webkit && window.webkit.messageHandlers &&
+            window.webkit.messageHandlers.batteryHogAPI;
+          if (!native) return;
+          window.fetch = async function(input, options) {
+            const raw = typeof input === 'string' ? input : (input && input.url) || '';
+            if (!raw.startsWith('/api/')) {
+              throw new TypeError('Network requests are disabled in Battery Hog');
+            }
+            const init = options || {};
+            let body = {};
+            if (typeof init.body === 'string' && init.body.length) {
+              try { body = JSON.parse(init.body); }
+              catch (_) { throw new TypeError('Invalid Battery Hog request body'); }
+            }
+            const result = await native.postMessage({
+              method: String(init.method || 'GET').toUpperCase(),
+              path: raw,
+              body: body
+            });
+            return new Response(JSON.stringify(result.body), {
+              status: Number(result.status) || 500,
+              headers: {'Content-Type': 'application/json', 'Cache-Control': 'no-store'}
+            });
+          };
+          window.__batteryHogNativeAPI = true;
+        })();
+        """
+        ucc.addUserScript(WKUserScript(source: apiJS, injectionTime: .atDocumentStart,
+                                       forMainFrameOnly: true))
         let dragJS = """
         document.documentElement.classList.add('native-shell');
         document.addEventListener('mousedown', function(e){
@@ -392,6 +371,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         webView.setValue(false, forKey: "drawsBackground")
         webView.autoresizingMask = [.width, .height]
         webView.uiDelegate = self                            // so JS confirm()/alert() show native panels
+        webView.navigationDelegate = self
 
         // Native translucent backdrop. The HTML keeps its sidebar transparent so this
         // vibrancy shows there (the hallmark of a native macOS sidebar); the content
@@ -428,35 +408,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         window.makeKeyAndOrderFront(nil)
     }
 
-    func waitForServer(attempt: Int) {
-        guard let url = URL(string: "http://127.0.0.1:\(port)/") else { return }
-        var req = URLRequest(url: url); req.timeoutInterval = 1.5
-        URLSession.shared.dataTask(with: req) { _, resp, _ in
-            DispatchQueue.main.async {
-                if let h = resp as? HTTPURLResponse, h.statusCode == 200 {
-                    self.webView.load(URLRequest(url: url))
-                    self.startStatsPolling()
-                } else if attempt < 60 {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                        self.waitForServer(attempt: attempt + 1)
-                    }
-                } else {
-                    self.webView.loadHTMLString(
-                        """
-                        <meta name='color-scheme' content='light dark'>
-                        <style>
-                          :root { color-scheme: light dark; }
-                          body { margin:0; padding:40px; font-family:-apple-system;
-                                 background:Canvas; color:CanvasText; }
-                          p { color:color-mix(in srgb, CanvasText 65%, transparent); }
-                        </style>
-                        <h2>Couldn't start the battery monitor.</h2>
-                        <p>Make sure python3 is available, then reopen Battery Hog.</p>
-                        """,
-                        baseURL: nil)
-                }
-            }
-        }.resume()
+    private func loadDashboard() {
+        guard let url = Bundle.main.url(forResource: "dashboard", withExtension: "html") else {
+            NSLog("Battery Hog dashboard resource is missing from %@", Bundle.main.bundlePath)
+            webView.loadHTMLString(
+                """
+                <meta name='color-scheme' content='light dark'>
+                <style>:root{color-scheme:light dark}body{margin:0;padding:40px;font-family:-apple-system;background:Canvas;color:CanvasText}p{opacity:.65}</style>
+                <h2>Battery Hog’s dashboard is missing.</h2>
+                <p>Reinstall the app from the official release.</p>
+                """, baseURL: nil)
+            return
+        }
+        dashboardURL = url.standardizedFileURL
+        NSLog("Battery Hog loading dashboard from %@", url.path)
+        webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
     }
 
     // MARK: menu-bar status item
@@ -488,19 +454,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     func pollStats() {
         guard !statsPollInFlight else { return }
         statsPollInFlight = true
-        guard let url = URL(string: "http://127.0.0.1:\(port)/api/stats") else {
-            statsPollInFlight = false
-            return
-        }
-        URLSession.shared.dataTask(with: url) { data, _, _ in
-            let obj = data.flatMap {
-                try? JSONSerialization.jsonObject(with: $0) as? [String: Any]
-            }
+        backend.stats { [weak self] obj in
             DispatchQueue.main.async {
+                guard let self else { return }
                 self.statsPollInFlight = false
-                if let obj = obj { self.applyStats(obj) }
+                self.applyStats(obj)
             }
-        }.resume()
+        }
     }
 
     func applyStats(_ obj: [String: Any]) {
@@ -561,7 +521,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         menu.addItem(summary)
         menu.addItem(.separator())
 
-        let hdr = NSMenuItem(title: "Top battery users", action: nil, keyEquivalent: "")
+        let hdr = NSMenuItem(title: "Apps by estimated impact", action: nil, keyEquivalent: "")
         hdr.isEnabled = false
         menu.addItem(hdr)
 
@@ -579,6 +539,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                 let q = NSMenuItem(title: "Quit \(name)", action: #selector(quitProcess(_:)), keyEquivalent: "")
                 q.target = self
                 q.representedObject = ["name": name,
+                                       "path": p["path"] as? String ?? "",
                                        "bundle": (p["bundle"] as? Bool) ?? false,
                                        "pids": p["pids"] ?? []]
                 sub.addItem(q)
@@ -628,6 +589,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         a.addButton(withTitle: "Cancel")
         if a.runModal() == .alertFirstButtonReturn {
             backendPOST("/api/kill", ["name": name,
+                                      "path": d["path"] ?? "",
                                       "bundle": d["bundle"] ?? false,
                                       "pids": d["pids"] ?? []])
         }
@@ -995,14 +957,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     }
 
     func backendPOST(_ path: String, _ body: [String: Any]) {
-        guard let url = URL(string: "http://127.0.0.1:\(port)\(path)") else { return }
-        var req = URLRequest(url: url)
-        req.httpMethod = "POST"
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = try? JSONSerialization.data(withJSONObject: body)
-        URLSession.shared.dataTask(with: req) { _, _, _ in
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { self.pollStats() }
-        }.resume()
+        backend.post(path: path, body: body) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { self?.pollStats() }
+        }
     }
 
     // MARK: lifecycle
@@ -1020,19 +977,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                                                   object: nil)
         heatEvaluationWorkItem?.cancel()
         webView?.configuration.userContentController.removeScriptMessageHandler(forName: "updates")
-        py?.terminate()
+        webView?.configuration.userContentController.removeScriptMessageHandler(
+            forName: "batteryHogAPI", contentWorld: .page)
+        backend?.stop()
     }
 
-    // Drag the window when the web layer reports a mousedown on an empty region.
+    private func isTrustedDashboardURL(_ url: URL?) -> Bool {
+        guard let expected = dashboardURL?.standardizedFileURL,
+              let candidate = url?.standardizedFileURL else { return false }
+        return candidate == expected
+    }
+
+    private func isTrustedDashboardMessage(_ message: WKScriptMessage) -> Bool {
+        message.frameInfo.isMainFrame && isTrustedDashboardURL(webView?.url)
+            && isTrustedDashboardURL(message.frameInfo.request.url)
+    }
+
+    // Drag the window when the bundled web layer reports a mousedown on an empty region.
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
-        if message.name == "drag", let event = NSApp.currentEvent {
+        if message.name == "drag", isTrustedDashboardMessage(message), let event = NSApp.currentEvent {
             window.performDrag(with: event)
             return
         }
         guard message.name == "updates",
-              message.frameInfo.isMainFrame,
-              webView.url?.host == "127.0.0.1",
-              webView.url?.port == port,
+              isTrustedDashboardMessage(message),
               let payload = message.body as? [String: Any],
               let action = payload["action"] as? String else { return }
         switch action {
@@ -1049,6 +1017,76 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         default:
             break
         }
+    }
+
+    func userContentController(_ userContentController: WKUserContentController,
+                               didReceive message: WKScriptMessage,
+                               replyHandler: @escaping (Any?, String?) -> Void) {
+        guard message.name == "batteryHogAPI", isTrustedDashboardMessage(message),
+              let request = message.body as? [String: Any],
+              let method = request["method"] as? String,
+              let path = request["path"] as? String,
+              ["GET", "POST"].contains(method),
+              path.count <= 256, path.hasPrefix("/api/") else {
+            NSLog("Battery Hog rejected dashboard API message %@ from %@",
+                  message.name, message.frameInfo.request.url?.absoluteString ?? "none")
+            replyHandler(nil, "Battery Hog rejected an untrusted dashboard request.")
+            return
+        }
+        if let rawBody = request["body"], !(rawBody is [String: Any]) {
+            replyHandler(nil, "Battery Hog request body must be a JSON object.")
+            return
+        }
+        let body = request["body"] as? [String: Any] ?? [:]
+        guard JSONSerialization.isValidJSONObject(body),
+              let data = try? JSONSerialization.data(withJSONObject: body) else {
+            replyHandler(nil, "Battery Hog request body is invalid.")
+            return
+        }
+        if data.count > 64 * 1024 {
+            replyHandler(nil, "Battery Hog request is too large.")
+            return
+        }
+        backend.request(method: method, path: path, body: body) { response in
+            let payload: [String: Any] = [
+                "status": response.status,
+                "body": JSONValue.bridgeSafe(response.body)
+            ]
+            DispatchQueue.main.async { replyHandler(payload, nil) }
+        }
+    }
+
+    func webView(_ webView: WKWebView,
+                 decidePolicyFor navigationAction: WKNavigationAction,
+                 decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        guard let url = navigationAction.request.url else {
+            decisionHandler(.cancel)
+            return
+        }
+        if isTrustedDashboardURL(url) || (url.scheme == "about" && dashboardURL == nil) {
+            decisionHandler(.allow)
+            return
+        }
+        let trustedSource = navigationAction.sourceFrame.isMainFrame
+            && navigationAction.sourceFrame.request.url.map(isTrustedDashboardURL) == true
+        let userActivatedLink = navigationAction.navigationType == .linkActivated
+            && (navigationAction.targetFrame?.isMainFrame ?? true)
+        if trustedSource, userActivatedLink,
+           ["http", "https"].contains(url.scheme?.lowercased() ?? "") {
+            NSWorkspace.shared.open(url)
+        }
+        NSLog("Battery Hog blocked dashboard navigation to %@ (expected %@)",
+              url.absoluteString, dashboardURL?.absoluteString ?? "none")
+        decisionHandler(.cancel)
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        NSLog("Battery Hog dashboard navigation failed: %@", error.localizedDescription)
+    }
+
+    func webView(_ webView: WKWebView,
+                 didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        NSLog("Battery Hog dashboard provisional navigation failed: %@", error.localizedDescription)
     }
 
     // WKWebView suppresses JS dialogs unless these are implemented — without them
@@ -1078,32 +1116,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     }
 }
 
-let app = NSApplication.shared
-app.setActivationPolicy(.regular)
-let delegate = AppDelegate()
-app.delegate = delegate
+@main
+enum BatteryHogApplication {
+    static func main() {
+        let app = NSApplication.shared
+        app.setActivationPolicy(.regular)
+        let delegate = AppDelegate()
+        app.delegate = delegate
 
-let mainMenu = NSMenu()
-let appItem = NSMenuItem()
-mainMenu.addItem(appItem)
-let appMenu = NSMenu()
-let updateItem = NSMenuItem(title: "Check for Updates…",
-                            action: #selector(AppDelegate.checkForUpdates(_:)),
-                            keyEquivalent: "")
-updateItem.target = delegate
-appMenu.addItem(updateItem)
-appMenu.addItem(NSMenuItem.separator())
-appMenu.addItem(withTitle: "Hide Battery Hog", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
-appMenu.addItem(NSMenuItem.separator())
-appMenu.addItem(withTitle: "Quit Battery Hog", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
-appItem.submenu = appMenu
+        let mainMenu = NSMenu()
+        let appItem = NSMenuItem()
+        mainMenu.addItem(appItem)
+        let appMenu = NSMenu()
+        let updateItem = NSMenuItem(title: "Check for Updates…",
+                                    action: #selector(AppDelegate.checkForUpdates(_:)),
+                                    keyEquivalent: "")
+        updateItem.target = delegate
+        appMenu.addItem(updateItem)
+        appMenu.addItem(NSMenuItem.separator())
+        appMenu.addItem(withTitle: "Hide Battery Hog",
+                        action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        appMenu.addItem(NSMenuItem.separator())
+        appMenu.addItem(withTitle: "Quit Battery Hog",
+                        action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appItem.submenu = appMenu
 
-let winItem = NSMenuItem()
-mainMenu.addItem(winItem)
-let winMenu = NSMenu(title: "Window")
-winMenu.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
-winMenu.addItem(withTitle: "Minimize", action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
-winItem.submenu = winMenu
+        let windowItem = NSMenuItem()
+        mainMenu.addItem(windowItem)
+        let windowMenu = NSMenu(title: "Window")
+        windowMenu.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)),
+                           keyEquivalent: "w")
+        windowMenu.addItem(withTitle: "Minimize",
+                           action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
+        windowItem.submenu = windowMenu
 
-app.mainMenu = mainMenu
-app.run()
+        app.mainMenu = mainMenu
+        app.run()
+        withExtendedLifetime(delegate) {}
+    }
+}

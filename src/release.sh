@@ -27,6 +27,7 @@ DIST="$ROOT/dist"
 APP="$DIST/Battery Hog.app"
 DMG="$DIST/BatteryHog-$VERSION.dmg"
 SWIFT_TARGET="${SWIFT_TARGET:-arm64-apple-macosx11.0}"
+source "$ROOT/src/native_build.sh"
 
 if [ -z "${SIGN_ID:-}" ]; then
     echo "Set SIGN_ID to your Developer ID Application identity, e.g.:"
@@ -40,7 +41,7 @@ fi
 
 echo "==> Clean"
 rm -rf "$DIST"; mkdir -p "$DIST"
-C="$APP/Contents"; mkdir -p "$C/MacOS" "$C/Resources" "$C/Frameworks"
+C="$APP/Contents"; mkdir -p "$C/MacOS" "$C/Resources" "$C/Frameworks" "$C/Helpers"
 
 echo "==> Icon"
 swift make_icon.swift >/dev/null
@@ -61,20 +62,13 @@ if ! iconutil -c icns "$ICONSET" -o "$C/Resources/AppIcon.icns"; then
 fi
 
 echo "==> Compile (Swift)"
-swiftc -O -target "$SWIFT_TARGET" BatteryHogApp.swift -o "$C/MacOS/BatteryHog" \
-    -F "$SPARKLE_ROOT" -framework Sparkle \
-    -framework Cocoa -framework WebKit -framework UserNotifications \
-    -Xlinker -rpath -Xlinker '@loader_path/../Frameworks'
+compile_battery_hog_native "$C"
 
 echo "==> Bundle"
 cp Info.plist "$C/Info.plist"
 stamp_bundle_version "$C/Info.plist"
 ditto "$SPARKLE_ROOT/Sparkle.framework" "$C/Frameworks/Sparkle.framework"
 cp "$SPARKLE_ROOT/LICENSE" "$C/Resources/Sparkle-LICENSE.txt"
-cp "$ROOT/battery_hog.py" "$C/Resources/battery_hog.py"
-cp "$ROOT/batteryhog_workloads.py" "$C/Resources/batteryhog_workloads.py"
-cp "$ROOT/batteryhog_gate.py" "$C/Resources/batteryhog_gate.py"
-chmod +x "$C/Resources/batteryhog_gate.py"
 cp "$ROOT/dashboard.html" "$C/Resources/dashboard.html"
 printf 'APPL????' > "$C/PkgInfo"
 
@@ -88,6 +82,7 @@ codesign --force --options runtime --timestamp --sign "$SIGN_ID" \
 codesign --force --options runtime --timestamp --sign "$SIGN_ID" "$SPARKLE_BIN/Autoupdate"
 codesign --force --options runtime --timestamp --sign "$SIGN_ID" "$SPARKLE_BIN/Updater.app"
 codesign --force --options runtime --timestamp --sign "$SIGN_ID" "$SPARKLE_FRAMEWORK"
+codesign --force --options runtime --timestamp --sign "$SIGN_ID" "$C/Helpers/batteryhog-gate"
 codesign --force --options runtime --timestamp --sign "$SIGN_ID" "$C/MacOS/BatteryHog"
 codesign --force --options runtime --timestamp --sign "$SIGN_ID" "$APP"
 codesign --deep --verify --strict --verbose=2 "$APP"

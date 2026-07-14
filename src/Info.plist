@@ -22,11 +22,6 @@
     <string>public.app-category.utilities</string>
     <key>NSHumanReadableCopyright</key>
     <string>Local utility. Runs entirely on your Mac.</string>
-    <key>NSAppTransportSecurity</key>
-    <dict>
-        <key>NSAllowsLocalNetworking</key>
-        <true/>
-    </dict>
     <key>SUFeedURL</key>
     <string>https://github.com/luke-fairbanks/BatteryHog/releases/latest/download/appcast.xml</string>
     <key>SUPublicEDKey</key>
