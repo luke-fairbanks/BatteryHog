@@ -71,7 +71,7 @@
       <div class="wrap hero-grid">
         <div class="hero-copy">
           <div class="eyebrow">Mac battery diagnostics for developers</div>
-          <h1>Debug your battery,&nbsp;<span class="soft">not your workflow.</span></h1>
+          <h1><span class="hero-line">Debug your battery, <span class="soft">not</span></span> <span class="hero-line soft">your workflow.</span></h1>
           <p>Battery Hog shows what is draining your MacBook—from Chrome to the builds, dev servers, and coding agents behind it—then gives you a practical next action.</p>
           <div class="hero-actions">
             <a class="button primary" href="https://github.com/luke-fairbanks/BatteryHog">
@@ -86,34 +86,15 @@
           <div class="microcopy">Free · MIT licensed · No account · No analytics · Apple Silicon, macOS 11+</div>
         </div>
 
-        <div class="diagnostic" role="img" aria-label="Illustration of Battery Hog connecting total Mac power draw to an active compiler workload">
-          <div class="window-bar">
-            <span class="traffic"><i></i><i></i><i></i></span>
-            <span class="window-label">Battery Hog / Now</span>
-            <span class="live">Live</span>
-          </div>
-          <div class="diagnostic-body">
-            <div class="diag-top">
-              <div>
-                <div class="diag-kicker">Energy forecast</div>
-                <div class="diag-number">1:45 <span>left</span></div>
-              </div>
-              <div class="battery-readout"><strong>76%</strong><span>Battery</span></div>
+        <div class="hero-visual">
+          <div class="hero-window">
+            <div class="hero-window-bar" aria-hidden="true">
+              <span class="traffic"><i></i><i></i><i></i></span>
+              <span>Battery Hog / v1.5.0</span>
             </div>
-            <div class="trace" aria-hidden="true">
-              <svg viewBox="0 0 500 90" preserveAspectRatio="none">
-                <defs><linearGradient id="traceGradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#baff3c" stop-opacity=".22"/><stop offset="1" stop-color="#baff3c" stop-opacity="0"/></linearGradient></defs>
-                <path class="grid" d="M0 18H500M0 50H500M0 82H500"/>
-                <path class="area" d="M0 65L60 62L105 66L150 45L205 53L260 31L305 38L352 20L405 25L452 16L500 20L500 90L0 90Z"/>
-                <path class="line" d="M0 65L60 62L105 66L150 45L205 53L260 31L305 38L352 20L405 25L452 16L500 20"/>
-              </svg>
+            <div class="hero-screen">
+              <img src="assets/product-now.png" alt="Battery Hog showing battery forecast, live Mac power draw, active development work, and Google Chrome as a likely contributor." width="2400" height="1600" fetchpriority="high">
             </div>
-            <div class="culprit">
-              <span class="culprit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 8 4 4-4 4M13 16h5"/></svg></span>
-              <div><strong>Atlas compiler workers</strong><span>5 workers · 240% average CPU</span></div>
-              <span class="impact">Likely contributor</span>
-            </div>
-            <div class="heat-alert"><b>Thermal pressure rose</b><p>Your Mac is heating up—likely Atlas compiler workers. Chrome is also contributing.</p></div>
           </div>
         </div>
       </div>
