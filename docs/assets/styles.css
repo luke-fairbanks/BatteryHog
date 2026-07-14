@@ -128,7 +128,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .hero-grid {
   width: min(1380px, calc(100% - 80px));
   display: grid;
-  grid-template-columns: minmax(590px, .95fr) minmax(0, 1.05fr);
+  grid-template-columns: 680px minmax(0, 1fr);
   align-items: center;
   gap: 32px;
 }
@@ -146,9 +146,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .eyebrow::before { content: ""; width: 22px; height: 2px; border-radius: 2px; background: currentColor; }
 h1, h2, h3, p { margin-top: 0; }
 h1 {
-  max-width: 760px;
+  max-width: 680px;
   margin-bottom: 23px;
-  font-size: clamp(58px, 5.55vw, 86px);
+  font-size: clamp(58px, 5vw, 72px);
   line-height: .93;
   letter-spacing: -.068em;
 }
@@ -333,11 +333,14 @@ h2 { margin-bottom: 17px; font-size: clamp(37px, 4.5vw, 62px); line-height: 1.02
 .use-card h3 { margin: 0 0 9px; }
 .use-card p { margin: 0; font-size: 14px; }
 
-@media (max-width: 960px) {
+@media (max-width: 1180px) {
   .hero { min-height: auto; padding: 65px 0 72px; }
   .hero-grid { width: min(100% - 40px, 760px); grid-template-columns: 1fr; gap: 52px; }
   .hero-copy h1 { max-width: 760px; }
   .hero-visual { width: 100%; transform: rotate(-1deg); transform-origin: center; }
+}
+
+@media (max-width: 960px) {
   .problem-grid { grid-template-columns: 1fr; }
   .problem-card { min-height: 0; }
   .step { margin-bottom: 35px; }
