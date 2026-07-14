@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Battery Hog — Debug your Mac battery</title>
+  <meta name="description" content="Battery Hog shows what is draining your MacBook—from Chrome to builds, dev servers, and coding agents—then gives you a practical next action.">
+  <meta name="theme-color" content="#080b09">
+  <meta property="og:title" content="Battery Hog — Debug your battery, not your workflow">
+  <meta property="og:description" content="Live watts, workload-aware heat alerts, sleep blockers, and local Mac battery diagnostics. Free and open source.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://luke-fairbanks.github.io/BatteryHog/">
+  <meta property="og:image" content="https://luke-fairbanks.github.io/BatteryHog/assets/social-card.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://luke-fairbanks.github.io/BatteryHog/">
+  <link rel="icon" href="assets/batteryhog-icon.png">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "Battery Hog",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "macOS 11 or later on Apple Silicon",
+        "softwareVersion": "1.5.0",
+        "isAccessibleForFree": true,
+        "license": "https://opensource.org/license/mit",
+        "downloadUrl": "https://github.com/luke-fairbanks/BatteryHog/releases/latest",
+        "codeRepository": "https://github.com/luke-fairbanks/BatteryHog",
+        "description": "A local Mac utility for diagnosing battery drain, development workloads, sleep blockers, and thermal pressure."
+      },
+      {
+        "@type": "Person",
+        "name": "Luke Fairbanks",
+        "url": "https://github.com/luke-fairbanks"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {"@type":"Question","name":"Does Battery Hog measure exact watts per app?","acceptedAnswer":{"@type":"Answer","text":"No. Live watts describe the whole Mac. App and process rows are ranked separately using live CPU and memory signals."}},
+          {"@type":"Question","name":"Does Battery Hog detect the fans?","acceptedAnswer":{"@type":"Answer","text":"No. Heat Watch observes Apple-supported macOS thermal states and uses recent workload history to suggest likely contributors."}},
+          {"@type":"Question","name":"Does Battery Hog send monitoring data anywhere?","acceptedAnswer":{"@type":"Answer","text":"Monitoring and analysis stay on the Mac. There is no analytics or account. Direct-download installs contact GitHub only for manual update checks or after the user opts into periodic checks."}}
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap nav">
+      <a class="brand" href="index.html" aria-label="Battery Hog home">
+        <img src="assets/batteryhog-icon.png" alt="">
+        <span>Battery Hog</span>
+        <small>Open source</small>
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#how-it-works">How it works</a>
+        <a href="#honest-by-design">Trust</a>
+        <a href="https://github.com/luke-fairbanks/BatteryHog">GitHub</a>
+        <a class="button compact primary" data-download href="https://github.com/luke-fairbanks/BatteryHog/releases/latest">Download</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow">Mac battery diagnostics for developers</div>
+          <h1>Debug your battery,&nbsp;<span class="soft">not your workflow.</span></h1>
+          <p>Battery Hog shows what is draining your MacBook—from Chrome to the builds, dev servers, and coding agents behind it—then gives you a practical next action.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="https://github.com/luke-fairbanks/BatteryHog">
+              View source on GitHub
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+            </a>
+            <a class="button" data-download href="https://github.com/luke-fairbanks/BatteryHog/releases/latest">
+              Download signed DMG
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/></svg>
+            </a>
+          </div>
+          <div class="microcopy">Free · MIT licensed · No account · No analytics · Apple Silicon, macOS 11+</div>
+        </div>
+
+        <div class="diagnostic" role="img" aria-label="Illustration of Battery Hog connecting total Mac power draw to an active compiler workload">
+          <div class="window-bar">
+            <span class="traffic"><i></i><i></i><i></i></span>
+            <span class="window-label">Battery Hog / Now</span>
+            <span class="live">Live</span>
+          </div>
+          <div class="diagnostic-body">
+            <div class="diag-top">
+              <div>
+                <div class="diag-kicker">Energy forecast</div>
+                <div class="diag-number">1:45 <span>left</span></div>
+              </div>
+              <div class="battery-readout"><strong>76%</strong><span>Battery</span></div>
+            </div>
+            <div class="trace" aria-hidden="true">
+              <svg viewBox="0 0 500 90" preserveAspectRatio="none">
+                <defs><linearGradient id="traceGradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#baff3c" stop-opacity=".22"/><stop offset="1" stop-color="#baff3c" stop-opacity="0"/></linearGradient></defs>
+                <path class="grid" d="M0 18H500M0 50H500M0 82H500"/>
+                <path class="area" d="M0 65L60 62L105 66L150 45L205 53L260 31L305 38L352 20L405 25L452 16L500 20L500 90L0 90Z"/>
+                <path class="line" d="M0 65L60 62L105 66L150 45L205 53L260 31L305 38L352 20L405 25L452 16L500 20"/>
+              </svg>
+            </div>
+            <div class="culprit">
+              <span class="culprit-icon">&gt;_</span>
+              <div><strong>Atlas compiler workers</strong><span>5 workers · 240% average CPU</span></div>
+              <span class="impact">Likely contributor</span>
+            </div>
+            <div class="heat-alert"><b>Thermal pressure rose</b><p>Your Mac is heating up—likely Atlas compiler workers. Chrome is also contributing.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="trust-strip">
+      <div class="wrap trust-list" aria-label="Product trust facts">
+        <span>Free &amp; MIT</span><span>Monitoring stays local</span><span>Signed &amp; notarized</span><span>No account</span><span>No analytics</span>
+      </div>
+    </div>
+
+    <section class="section" id="how-it-works">
+      <div class="wrap">
+        <div class="section-head">
+          <div class="eyebrow">From symptom to culprit</div>
+          <h2>A battery percentage tells you there’s a problem. Battery Hog helps explain it.</h2>
+        </div>
+        <div class="problem-grid">
+          <article class="problem-card"><span class="step">01</span><h3>See the current</h3><p>Watch the Mac’s total battery-side power draw and a rolling 90-second trace instead of guessing from percentage alone.</p></article>
+          <article class="problem-card"><span class="step">02</span><h3>Connect the workers</h3><p>Trace compilers, tests, dev servers, and coding-agent descendants back to the project workload they belong to.</p></article>
+          <article class="problem-card"><span class="step">03</span><h3>Choose the next move</h3><p>Open the likely workload, quit an app, release a sleep blocker, or coordinate the heavy command you actually control.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section tight">
+      <div class="wrap feature-layout">
+        <div class="feature-sticky">
+          <div class="eyebrow">Built for real Mac workloads</div>
+          <h2>One story, not six monitors.</h2>
+          <p>Battery Hog connects battery runway, active apps, development processes, sleep assertions, and thermal state without turning your menu bar into a cockpit.</p>
+        </div>
+        <div class="feature-list">
+          <article class="feature-card"><div><div class="tag">Power</div><h3>Know how hard the whole Mac is pulling</h3><p>See system-wide live watts, battery level, forecast, drain history, and recent peaks in one place.</p></div><span class="feature-glyph">W</span></article>
+          <article class="feature-card"><div><div class="tag">Workloads</div><h3>Turn process soup into projects</h3><p>Recognized Node, Rust, Gradle, CocoaPods, test, scan, compiler, and dev-server activity is grouped using command, ancestry, and working-directory signals.</p></div><span class="feature-glyph">{ }</span></article>
+          <article class="feature-card"><div><div class="tag">Heat Watch</div><h3>Get context when thermal pressure rises</h3><p>Opt-in alerts use Apple’s supported thermal-state API plus recent CPU and workload history to suggest a likely contributor after sustained pressure.</p></div><span class="feature-glyph">°</span></article>
+          <article class="feature-card"><div><div class="tag">Sleep</div><h3>Find what keeps your Mac awake</h3><p>Surface long-running idle-sleep assertions, suspicious display timeouts, wake history, and practical fixes.</p></div><span class="feature-glyph">Zz</span></article>
+          <article class="feature-card"><div><div class="tag">Agent Mode</div><h3>Coordinate heavy commands deliberately</h3><p>Opt-in gated commands can share heavy-job lanes on battery. Ungated agents and processes are never silently intercepted, paused, or killed.</p></div><span class="feature-glyph">AI</span></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head center"><div class="eyebrow">Current release, fixture-safe data</div><h2>See the whole investigation.</h2><p>These captures use the current v1.5.0 interface with deterministic sample workloads—no private project names, browsing history, or live system profile.</p></div>
+        <div class="product-showcase">
+          <div class="capture-window">
+            <div class="capture-bar"><span class="traffic"><i></i><i></i><i></i></span><span>Battery Hog / v1.5.0</span></div>
+            <div class="capture-stage"><img data-screen-image loading="lazy" decoding="async" src="assets/product-now.png" alt="Battery Hog Now screen showing energy forecast, total power draw, likely app contributor, and current history."></div>
+          </div>
+          <div class="screen-tabs" role="tablist" aria-label="Battery Hog screens">
+            <button class="screen-tab" type="button" role="tab" aria-selected="true" data-screen="now">Now</button>
+            <button class="screen-tab" type="button" role="tab" aria-selected="false" data-screen="apps">Apps</button>
+            <button class="screen-tab" type="button" role="tab" aria-selected="false" data-screen="workloads">Workloads</button>
+            <button class="screen-tab" type="button" role="tab" aria-selected="false" data-screen="insights">Insights</button>
+            <button class="screen-tab" type="button" role="tab" aria-selected="false" data-screen="settings">Settings</button>
+          </div>
+          <p class="microcopy" data-screen-caption>A live battery investigation at a glance.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="honest-by-design">
+      <div class="wrap honesty">
+        <div class="honesty-grid">
+          <div class="honesty-copy">
+            <div class="eyebrow">Honest by design</div>
+            <h2>Useful estimates. Clear limits.</h2>
+            <p>macOS does not expose a clean, exact watt meter for every app. Battery Hog keeps the Mac’s measured total power draw separate from its ranked app and workload signals.</p>
+            <p>Heat Watch does not claim to hear your fans or prove a single cause. It observes macOS thermal pressure and explains what was recently working hardest.</p>
+          </div>
+          <div class="honesty-proof" aria-label="Claim boundaries">
+            <div class="code-line"><span class="yes">YES</span><span>System-wide live battery-side watts</span></div>
+            <div class="code-line"><span class="yes">YES</span><span>CPU, memory, ancestry, and project context</span></div>
+            <div class="code-line"><span class="yes">YES</span><span>Apple-supported thermal-state changes</span></div>
+            <div class="code-line"><span class="no">NO</span><span>Invented per-app watt readings</span></div>
+            <div class="code-line"><span class="no">NO</span><span>Secretly throttling every coding agent</span></div>
+            <div class="code-line"><span class="no">NO</span><span>Analytics or system-profile uploads</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head center"><div class="eyebrow">Where it fits</div><h2>Activity Monitor is a process table. Battery Hog is a battery investigation.</h2><p>Use the tool that matches the question you are asking.</p></div>
+        <div class="comparison-wrap">
+          <table class="comparison">
+            <thead><tr><th>Question</th><th>Battery Hog</th><th>Activity Monitor</th><th>General system monitors</th></tr></thead>
+            <tbody>
+              <tr><td>What is my total live power draw?</td><td class="highlight">Front and center</td><td>Energy-impact view</td><td>Often available</td></tr>
+              <tr><td>Which project owns these compiler workers?</td><td class="highlight">Grouped workloads</td><td>Manual process hunt</td><td>Usually process-first</td></tr>
+              <tr><td>Why did thermal pressure just rise?</td><td class="highlight">Recent likely contributors</td><td>Separate investigation</td><td>Varies by tool</td></tr>
+              <tr><td>What is blocking idle sleep?</td><td class="highlight">Action-oriented warning</td><td>Preventing Sleep column</td><td>Varies by tool</td></tr>
+              <tr><td>Do I need broad sensor telemetry?</td><td>Focused battery view</td><td>Built-in basics</td><td class="highlight">Usually the better fit</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head center"><div class="eyebrow">Straight answers</div><h2>Before you give a battery utility access to your Mac.</h2></div>
+        <div class="faq">
+          <details><summary>Does Battery Hog measure exact watts per app?</summary><p>No. Live watts describe the whole Mac. App and process rows are ranked separately using live CPU, memory, and context signals. Battery Hog deliberately avoids labeling those estimates as per-app watts.</p></details>
+          <details><summary>Does it detect my fans?</summary><p>No. Heat Watch observes Apple-supported macOS thermal states. After sustained pressure, it checks recent CPU and workload history and suggests likely contributors. That is useful context, not proof of a single cause.</p></details>
+          <details><summary>What leaves my Mac?</summary><p>Monitoring and analysis stay on-device. There is no account or analytics. A direct-download install contacts GitHub only when you manually check for an update or opt into periodic checks, which are off by default. Homebrew installations stay Homebrew-managed.</p></details>
+          <details><summary>Will Agent Mode throttle all my agents?</summary><p>No. Agent Mode only coordinates commands deliberately launched through the gate shown in Battery Hog. On AC, gated commands pass through unchanged. Ungated work is never silently intercepted, paused, or killed.</p></details>
+          <details><summary>What Macs are supported?</summary><p>The current release supports Apple Silicon Macs running macOS 11 or later. Version 1.5 uses a native Swift monitoring engine with a WebKit dashboard—there is no Python runtime or local HTTP server.</p></details>
+          <details><summary>Why not just use Activity Monitor?</summary><p>Activity Monitor is excellent for inspecting processes and energy impact. Battery Hog earns its place when you want those signals connected to live whole-Mac power, project-level development workloads, sleep blockers, charge history, and thermal context.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="section tight">
+      <div class="wrap cta-panel">
+        <div class="eyebrow">Free and open source</div>
+        <h2>The next time your battery drops, find the workload—not just the symptom.</h2>
+        <p>Download the signed and notarized DMG, or inspect every line first. If Battery Hog saves you a hunt, starring the repo helps another Mac user find it.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="https://github.com/luke-fairbanks/BatteryHog">Open the GitHub repo</a>
+          <a class="button" data-download href="https://github.com/luke-fairbanks/BatteryHog/releases/latest">Download Battery Hog</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div><a class="brand" href="index.html"><img src="assets/batteryhog-icon.png" alt=""><span>Battery Hog</span></a><p class="footer-copy">A focused Mac battery investigation tool built by Luke Fairbanks for unplugged developers, students, and heavy multitaskers.</p></div>
+        <nav class="footer-links" aria-label="Footer">
+          <a href="for/developers.html">For developers</a><a href="alternatives/activity-monitor.html">vs Activity Monitor</a>
+          <a href="for/ai-coding.html">For AI coding</a><a href="privacy.html">Privacy</a>
+          <a href="for/students.html">For students</a><a href="terms.html">Terms</a>
+          <a href="https://github.com/luke-fairbanks/BatteryHog/releases">Releases</a><a href="https://github.com/luke-fairbanks/BatteryHog/issues">Support</a>
+        </nav>
+      </div>
+      <div class="copyright">MIT licensed · Built in Colorado · Not affiliated with Apple</div>
+    </div>
+  </footer>
+  <script src="assets/site.js"></script>
+</body>
+</html>
