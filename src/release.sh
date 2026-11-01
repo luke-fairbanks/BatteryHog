@@ -69,7 +69,9 @@ cp Info.plist "$C/Info.plist"
 stamp_bundle_version "$C/Info.plist"
 ditto "$SPARKLE_ROOT/Sparkle.framework" "$C/Frameworks/Sparkle.framework"
 cp "$SPARKLE_ROOT/LICENSE" "$C/Resources/Sparkle-LICENSE.txt"
+python3 "$ROOT/scripts/build_localizations.py" --check
 cp "$ROOT/dashboard.html" "$C/Resources/dashboard.html"
+cp -R "$ROOT/locales" "$C/Resources/locales"
 printf 'APPL????' > "$C/PkgInfo"
 
 echo "==> Sign (Developer ID, hardened runtime, secure timestamp)"

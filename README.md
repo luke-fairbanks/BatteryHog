@@ -1,3 +1,5 @@
+[简体中文](README.zh-CN.md) · [Localization guide](docs/localization.md)
+
 <div align="center">
   <h1>Battery Hog</h1>
   <p><b>A native macOS app that shows what's draining your battery — and actually helps you fix it.</b></p>

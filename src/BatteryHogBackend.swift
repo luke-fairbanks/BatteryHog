@@ -150,7 +150,7 @@ final class BatteryHogBackend {
                 let result = self.settingsStore.updatePersisting(body)
                 response = BackendResponse(status: result.persisted ? 200 : 500,
                     body: ["ok": result.persisted, "settings": result.value,
-                           "message": result.persisted ? "Saved." : "Couldn't save settings."])
+                           "message": result.persisted ? L("Saved.") : L("Couldn't save settings.")])
                 self.invalidateStatsCache()
             case ("POST", "/api/ignore"):
                 let reset = body["reset"] as? Bool ?? false
@@ -160,7 +160,7 @@ final class BatteryHogBackend {
                                                                  reset: reset)
                 response = BackendResponse(status: result.persisted ? 200 : 500,
                     body: ["ok": result.persisted, "ignored": result.value,
-                           "message": result.persisted ? "Saved." : "Couldn't save ignored apps."])
+                           "message": result.persisted ? L("Saved.") : L("Couldn't save ignored apps.")])
                 self.invalidateStatsCache()
             case ("POST", "/api/kill"):
                 response = BackendResponse(status: 200, body: self.quitAction(body))
@@ -168,7 +168,7 @@ final class BatteryHogBackend {
             case ("POST", "/api/lowpower"):
                 guard let enabled = body["on"] as? Bool else {
                     response = BackendResponse(status: 400,
-                                               body: ["ok": false, "message": "Invalid setting."])
+                                               body: ["ok": false, "message": L("Invalid setting.")])
                     break
                 }
                 response = BackendResponse(status: 200, body: self.setLowPower(enabled))
@@ -838,7 +838,7 @@ final class BatteryHogBackend {
               !Self.criticalNames.contains(name),
               !name.lowercased().contains("batteryhog"),
               let requested = body["pids"] as? [Any] else {
-            return ["ok": false, "message": "That process is protected."]
+            return ["ok": false, "message": L("That process is protected.")]
         }
         let requestedPIDs = Set(requested.compactMap { value -> Int32? in
             guard let number = value as? NSNumber,
@@ -848,7 +848,7 @@ final class BatteryHogBackend {
             return Int32(pid)
         }.prefix(50))
         guard !requestedPIDs.isEmpty else {
-            return ["ok": false, "message": "Nothing to quit."]
+            return ["ok": false, "message": L("Nothing to quit.")]
         }
 
         // The dashboard is a view, not an authority. Only accept positive PIDs
@@ -859,18 +859,18 @@ final class BatteryHogBackend {
                 $0["name"] as? String == name && $0["path"] as? String == requestedPath
             }),
               advertised["protected"] as? Bool != true else {
-            return ["ok": false, "message": "That process is protected."]
+            return ["ok": false, "message": L("That process is protected.")]
         }
         let advertisedPIDs = Set((advertised["pids"] as? [Int] ?? []).compactMap(Int32.init))
         let candidates = requestedPIDs.intersection(advertisedPIDs)
         guard !candidates.isEmpty else {
-            return ["ok": false, "message": "That process sample is no longer current."]
+            return ["ok": false, "message": L("That process sample is no longer current.")]
         }
         let advertisedPath = advertised["path"] as? String ?? ""
         let validated = validateCurrentPIDs(candidates, expectedName: name,
                                             expectedPath: advertisedPath)
         guard !validated.isEmpty else {
-            return ["ok": false, "message": "That process is no longer running."]
+            return ["ok": false, "message": L("That process is no longer running.")]
         }
         let isBundle = advertised["bundle"] as? Bool ?? false
         let result = quitTarget(name: name, path: advertisedPath,
@@ -934,7 +934,7 @@ final class BatteryHogBackend {
                 Thread.sleep(forTimeInterval: 0.15)
             }
             if revalidate(targets, expectedName: name, expectedPath: path).isEmpty {
-                return (true, "Quit \(name).")
+                return (true, L("Quit {name}.", ["name": name]))
             }
         }
         let termTargets = revalidate(targets, expectedName: name, expectedPath: path)
@@ -948,9 +948,9 @@ final class BatteryHogBackend {
         if !survivors.isEmpty { Thread.sleep(forTimeInterval: 0.25) }
         let stillRunning = revalidate(survivors, expectedName: name, expectedPath: path)
         if !stillRunning.isEmpty {
-            return (false, "Couldn't fully quit \(name) (\(stillRunning.count) still running).")
+            return (false, L("Couldn't fully quit {name} ({count} still running).", ["name": name, "count": String(stillRunning.count)]))
         }
-        return (true, "Quit \(name).")
+        return (true, L("Quit {name}.", ["name": name]))
     }
 
     private func setLowPower(_ enabled: Bool) -> [String: Any] {
@@ -958,7 +958,7 @@ final class BatteryHogBackend {
         let result = SystemCommand.runPrivileged("/usr/bin/pmset",
                                                   ["-a", "lowpowermode", value])
         if result.0 {
-            return ["ok": true, "message": "Low Power Mode turned \(enabled ? "on" : "off").",
+            return ["ok": true, "message": L("Low Power Mode turned {state}.", ["state": enabled ? L("on") : L("off")]),
                     "on": enabled]
         }
         return ["ok": false, "message": result.2, "on": NSNull()]
@@ -1004,7 +1004,7 @@ final class BatteryHogBackend {
         tasks.sort { ($0["energy"] as? Double ?? 0) > ($1["energy"] as? Double ?? 0) }
         tasks = Array(tasks.prefix(20))
         if tasks.isEmpty && system.isEmpty {
-            return ["ok": false, "message": "Could not parse powermetrics output."]
+            return ["ok": false, "message": L("Could not parse powermetrics output.")]
         }
         return ["ok": true, "system": system, "tasks": tasks]
     }
@@ -1039,7 +1039,7 @@ final class BatteryHogBackend {
         alertLock.withLock {
             if state == "discharging", let percent, percent <= threshold {
                 if !lowAlerted {
-                    notifications.append(("Battery low", "\(percent)% left — plug in soon."))
+                    notifications.append((L("Battery low"), L("{percent}% left — plug in soon.", ["percent": String(percent)])))
                     lowAlerted = true
                 }
             } else if percent == nil || state != "discharging" || percent! > threshold + 5 {
@@ -1048,7 +1048,7 @@ final class BatteryHogBackend {
 
             if onAC, let percent, percent >= 100 {
                 if !fullAlerted {
-                    notifications.append(("Fully charged", "Unplug when you can to ease battery wear."))
+                    notifications.append((L("Fully charged"), L("Unplug when you can to ease battery wear.")))
                     fullAlerted = true
                 }
             } else if !onAC || (percent != nil && percent! < 98) { fullAlerted = false }
@@ -1060,7 +1060,7 @@ final class BatteryHogBackend {
                       let cpu = (process["cpu"] as? NSNumber)?.doubleValue, cpu >= 95 else { continue }
                 hot.insert(name)
                 if !hotProcesses.contains(name) {
-                    notifications.append(("High CPU", "\(name) is using \(Int(cpu.rounded()))% CPU."))
+                    notifications.append((L("High CPU"), L("{name} is using {cpu}% CPU.", ["name": name, "cpu": String(Int(cpu.rounded()))])))
                 }
             }
             hotProcesses = hot
@@ -1071,8 +1071,8 @@ final class BatteryHogBackend {
                     let summary = processData["summary"] as? [String: Any] ?? [:]
                     let active = (summary["active_workers"] as? NSNumber)?.intValue ?? 0
                     let projects = (summary["projects"] as? NSNumber)?.intValue ?? 0
-                    notifications.append(("Heavy battery draw",
-                        "\(Int(watts.rounded())) W with \(active) active dev workers across \(projects) projects."))
+                    notifications.append((L("Heavy battery draw"),
+                        L("{watts} W with {workers} active dev workers across {projects} projects.", ["watts": String(Int(watts.rounded())), "workers": String(active), "projects": String(projects)])))
                     highDrawAlerted = true
                 }
             } else {

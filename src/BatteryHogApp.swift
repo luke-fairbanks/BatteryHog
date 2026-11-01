@@ -125,7 +125,7 @@ final class UpdateCoordinator: NSObject, SPUUpdaterDelegate {
     func setAutomaticChecks(_ enabled: Bool) {
         guard installMethod == "direct", let updater = updaterController?.updater else { return }
         updater.automaticallyChecksForUpdates = enabled
-        message = enabled ? "Automatic update checks are on." : "Automatic update checks are off."
+        message = enabled ? L("Automatic update checks are on.") : L("Automatic update checks are off.")
         errorMessage = nil
         pushState()
     }
@@ -134,17 +134,17 @@ final class UpdateCoordinator: NSObject, SPUUpdaterDelegate {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(Self.homebrewCommand, forType: .string)
-        message = "Homebrew upgrade command copied."
+        message = L("Homebrew upgrade command copied.")
         errorMessage = nil
         pushState()
     }
 
     func showHomebrewInstructions() {
         let alert = NSAlert()
-        alert.messageText = "Updates are managed by Homebrew"
-        alert.informativeText = "Run this command in Terminal to update Battery Hog:\n\n\(Self.homebrewCommand)"
-        alert.addButton(withTitle: "Copy Command")
-        alert.addButton(withTitle: "OK")
+        alert.messageText = L("Updates are managed by Homebrew")
+        alert.informativeText = L("Run this command in Terminal to update Battery Hog:\n\n{command}", ["command": Self.homebrewCommand])
+        alert.addButton(withTitle: L("Copy Command"))
+        alert.addButton(withTitle: L("OK"))
         if alert.runModal() == .alertFirstButtonReturn { copyHomebrewCommand() }
     }
 
@@ -155,7 +155,7 @@ final class UpdateCoordinator: NSObject, SPUUpdaterDelegate {
             "available": true,
             "installMethod": installMethod,
             "currentVersion": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString")
-                as? String ?? "Unknown",
+                as? String ?? L("Unknown"),
             "automaticChecks": installMethod == "direct"
                 ? (updater?.automaticallyChecksForUpdates ?? false) : false,
             "canCheck": installMethod == "direct" ? (updater?.canCheckForUpdates ?? false) : false,
@@ -188,7 +188,7 @@ final class UpdateCoordinator: NSObject, SPUUpdaterDelegate {
         status = "updateAvailable"
         latestVersion = item.displayVersionString
         lastChecked = Date()
-        message = "Version \(item.displayVersionString) is available."
+        message = L("Version {version} is available.", ["version": item.displayVersionString])
         errorMessage = nil
         pushState()
     }
@@ -198,7 +198,7 @@ final class UpdateCoordinator: NSObject, SPUUpdaterDelegate {
         latestVersion = nil
         lastChecked = Date()
         let detail = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
-        message = detail.isEmpty ? "No update is available for this Mac." : detail
+        message = detail.isEmpty ? L("No update is available for this Mac.") : detail
         errorMessage = nil
         pushState()
     }
@@ -320,6 +320,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         ucc.add(self, name: "drag")
         ucc.add(self, name: "updates")
         ucc.addScriptMessageHandler(self, contentWorld: .page, name: "batteryHogAPI")
+        if let data = try? JSONSerialization.data(withJSONObject: Locale.preferredLanguages),
+           let languages = String(data: data, encoding: .utf8) {
+            ucc.addUserScript(WKUserScript(
+                source: "window.__batteryHogLanguages = \(languages);",
+                injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        }
         let apiJS = """
         (() => {
           const native = window.webkit && window.webkit.messageHandlers &&
@@ -438,7 +444,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             b.imagePosition = .imageLeading
         }
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Starting…", action: nil, keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: L("Starting…"), action: nil, keyEquivalent: ""))
         statusItem.menu = menu
     }
 
@@ -501,7 +507,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         if mbOn("dev", false) {
             let projects = dev["projects"] as? Int ?? 0
             let heavy = dev["heavy_workers"] as? Int ?? 0
-            if projects > 0 { titleParts.append("\(heavy) jobs · \(projects) dev") }
+            if projects > 0 { titleParts.append(L("{jobs} jobs · {projects} dev", ["jobs": String(heavy), "projects": String(projects)])) }
         }
         statusItem.button?.title = titleParts.isEmpty ? "" : " " + titleParts.joined(separator: " · ")
 
@@ -511,17 +517,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         // battery summary line
         var parts: [String] = []
         if let pct = pct { parts.append("\(pct)%") }
-        parts.append(onAC ? (direction == "charging" ? "Charging" : "Plugged in") : "On battery")
+        parts.append(onAC ? (direction == "charging" ? L("Charging") : L("Plugged in")) : L("On battery"))
         if let w = watts { parts.append(String(format: "%.1f W", w)) }
         if let t = timeStr, direction == "charging" || direction == "discharging" {
-            parts.append(t + (direction == "charging" ? " to full" : " left"))
+            parts.append(t + (direction == "charging" ? L(" to full") : L(" left")))
         }
         let summary = NSMenuItem(title: parts.joined(separator: "  ·  "), action: nil, keyEquivalent: "")
         summary.isEnabled = false
         menu.addItem(summary)
         menu.addItem(.separator())
 
-        let hdr = NSMenuItem(title: "Apps by estimated impact", action: nil, keyEquivalent: "")
+        let hdr = NSMenuItem(title: L("Apps by estimated impact"), action: nil, keyEquivalent: "")
         hdr.isEnabled = false
         menu.addItem(hdr)
 
@@ -536,7 +542,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                 item.isEnabled = false
             } else {
                 let sub = NSMenu()
-                let q = NSMenuItem(title: "Quit \(name)", action: #selector(quitProcess(_:)), keyEquivalent: "")
+                let q = NSMenuItem(title: L("Quit {name}", ["name": name]), action: #selector(quitProcess(_:)), keyEquivalent: "")
                 q.target = self
                 q.representedObject = ["name": name,
                                        "path": p["path"] as? String ?? "",
@@ -553,28 +559,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             menu.addItem(.separator())
             let workers = dev["active_workers"] as? Int ?? 0
             let heavy = dev["heavy_workers"] as? Int ?? 0
-            let item = NSMenuItem(title: "Development   \(projects) projects · \(workers) active · \(heavy) heavy",
+            let item = NSMenuItem(title: L("Development   {projects} projects · {workers} active · {heavy} heavy", ["projects": String(projects), "workers": String(workers), "heavy": String(heavy)]),
                                   action: #selector(showWorkloads(_:)), keyEquivalent: "")
             item.target = self
             menu.addItem(item)
         }
 
         menu.addItem(.separator())
-        let lpm = NSMenuItem(title: "Low Power Mode", action: #selector(toggleLPM(_:)), keyEquivalent: "")
+        let lpm = NSMenuItem(title: L("Low Power Mode"), action: #selector(toggleLPM(_:)), keyEquivalent: "")
         lpm.target = self
         lpm.state = (lastLowPower == true) ? .on : .off
         if lastLowPower == nil { lpm.isEnabled = false }
         menu.addItem(lpm)
 
         menu.addItem(.separator())
-        let show = NSMenuItem(title: "Open Dashboard", action: #selector(showDashboard(_:)), keyEquivalent: "")
+        let show = NSMenuItem(title: L("Open Dashboard"), action: #selector(showDashboard(_:)), keyEquivalent: "")
         show.target = self
         menu.addItem(show)
-        let updates = NSMenuItem(title: "Check for Updates…",
+        let updates = NSMenuItem(title: L("Check for Updates…"),
                                  action: #selector(checkForUpdates(_:)), keyEquivalent: "")
         updates.target = self
         menu.addItem(updates)
-        menu.addItem(NSMenuItem(title: "Quit Battery Hog",
+        menu.addItem(NSMenuItem(title: L("Quit Battery Hog"),
                                 action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
     }
@@ -583,10 +589,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         guard let d = sender.representedObject as? [String: Any],
               let name = d["name"] as? String else { return }
         let a = NSAlert()
-        a.messageText = "Quit \(name)?"
-        a.informativeText = "It will be asked to close — save your work first."
-        a.addButton(withTitle: "Quit")
-        a.addButton(withTitle: "Cancel")
+        a.messageText = L("Quit {name}?", ["name": name])
+        a.informativeText = L("It will be asked to close — save your work first.")
+        a.addButton(withTitle: L("Quit"))
+        a.addButton(withTitle: L("Cancel"))
         if a.runModal() == .alertFirstButtonReturn {
             backendPOST("/api/kill", ["name": name,
                                       "path": d["path"] ?? "",
@@ -620,9 +626,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let center = UNUserNotificationCenter.current()
         center.delegate = self
         let open = UNNotificationAction(identifier: heatOpenAction,
-                                        title: "Open Workloads", options: [.foreground])
+                                        title: L("Open Workloads"), options: [.foreground])
         let snooze = UNNotificationAction(identifier: heatSnoozeAction,
-                                          title: "Snooze 1 hour", options: [])
+                                          title: L("Snooze 1 hour"), options: [])
         let category = UNNotificationCategory(identifier: heatNotificationCategory,
                                               actions: [open, snooze],
                                               intentIdentifiers: [], options: [])
@@ -805,9 +811,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             if !genericTools.contains(tool) { return tool }
         }
         if let family = families.first, !family.isEmpty {
-            return "\(project) \(family) workload"
+            return L("{project} {family} workload", ["project": project, "family": family])
         }
-        return "\(project) development workload"
+        return L("{project} development workload", ["project": project])
     }
 
     private func normalizedHeatContributorName(_ label: String) -> String {
@@ -823,13 +829,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
 
     private func heatWorkerNoun(for status: String) -> String {
         switch status.lowercased() {
-        case "compiling": return "compiler workers"
-        case "building": return "build workers"
-        case "testing": return "test workers"
-        case "serving": return "dev-server workers"
-        case "scanning": return "scan workers"
-        case "installing": return "install workers"
-        default: return "development workers"
+        case "compiling": return L("compiler workers")
+        case "building": return L("build workers")
+        case "testing": return L("test workers")
+        case "serving": return L("dev-server workers")
+        case "scanning": return L("scan workers")
+        case "installing": return L("install workers")
+        default: return L("development workers")
         }
     }
 
@@ -893,22 +899,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     private func heatNotificationBody(at now: Date) -> String {
         let candidates = heatCandidates(at: now)
         guard let top = candidates.first else {
-            return "Thermal pressure has stayed elevated. Open Workloads to see what is active."
+            return L("Thermal pressure has stayed elevated. Open Workloads to see what is active.")
         }
 
         let topCPU = Int(top.averageCPU.rounded())
-        var body = "Likely \(top.label)"
+        var body = L("Likely {name}", ["name": top.label])
         if let workerNoun = top.workerNoun, top.workers > 0 {
-            body += ": \(top.workers) \(workerNoun) averaging \(topCPU)% CPU."
+            body += L(": {count} {workers} averaging {cpu}% CPU.", ["count": String(top.workers), "workers": workerNoun, "cpu": String(topCPU)])
         } else {
-            body += ", averaging \(topCPU)% CPU."
+            body += L(", averaging {cpu}% CPU.", ["cpu": String(topCPU)])
         }
         let normalizedTop = normalizedHeatContributorName(top.label)
         if let second = candidates.dropFirst().first(where: {
             $0.averageCPU >= 15 && $0.averageCPU >= top.averageCPU * 0.15
                 && normalizedHeatContributorName($0.label) != normalizedTop
         }) {
-            body += " \(second.label) is also contributing at \(Int(second.averageCPU.rounded()))% CPU."
+            body += L(" {name} is also contributing at {cpu}% CPU.", ["name": second.label, "cpu": String(Int(second.averageCPU.rounded()))])
         }
         return body
     }
@@ -919,7 +925,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             return
         }
         let content = UNMutableNotificationContent()
-        content.title = "Your Mac is heating up"
+        content.title = L("Your Mac is heating up")
         content.body = body
         content.sound = .default
         content.categoryIdentifier = heatNotificationCategory
@@ -1096,7 +1102,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let alert = NSAlert()
         alert.messageText = "Battery Hog"
         alert.informativeText = message
-        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: L("OK"))
         if let w = window { alert.beginSheetModal(for: w) { _ in completionHandler() } }
         else { alert.runModal(); completionHandler() }
     }
@@ -1106,8 +1112,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let alert = NSAlert()
         alert.messageText = "Battery Hog"
         alert.informativeText = message
-        alert.addButton(withTitle: "OK")
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: L("OK"))
+        alert.addButton(withTitle: L("Cancel"))
         if let w = window {
             alert.beginSheetModal(for: w) { resp in completionHandler(resp == .alertFirstButtonReturn) }
         } else {
@@ -1128,25 +1134,25 @@ enum BatteryHogApplication {
         let appItem = NSMenuItem()
         mainMenu.addItem(appItem)
         let appMenu = NSMenu()
-        let updateItem = NSMenuItem(title: "Check for Updates…",
+        let updateItem = NSMenuItem(title: L("Check for Updates…"),
                                     action: #selector(AppDelegate.checkForUpdates(_:)),
                                     keyEquivalent: "")
         updateItem.target = delegate
         appMenu.addItem(updateItem)
         appMenu.addItem(NSMenuItem.separator())
-        appMenu.addItem(withTitle: "Hide Battery Hog",
+        appMenu.addItem(withTitle: L("Hide Battery Hog"),
                         action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         appMenu.addItem(NSMenuItem.separator())
-        appMenu.addItem(withTitle: "Quit Battery Hog",
+        appMenu.addItem(withTitle: L("Quit Battery Hog"),
                         action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu
 
         let windowItem = NSMenuItem()
         mainMenu.addItem(windowItem)
-        let windowMenu = NSMenu(title: "Window")
-        windowMenu.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)),
+        let windowMenu = NSMenu(title: L("Window"))
+        windowMenu.addItem(withTitle: L("Close"), action: #selector(NSWindow.performClose(_:)),
                            keyEquivalent: "w")
-        windowMenu.addItem(withTitle: "Minimize",
+        windowMenu.addItem(withTitle: L("Minimize"),
                            action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
         windowItem.submenu = windowMenu
 

@@ -7,6 +7,7 @@ mkdir -p "$BUILD"
 
 xcrun swiftc -parse-as-library -Onone -g -D BATTERY_HOG_TESTING \
     -target "$TARGET" \
+    "$ROOT/src/Localization.swift" \
     "$ROOT/src/SystemSupport.swift" \
     "$ROOT/src/AgentGateStore.swift" \
     "$ROOT/src/BatteryHogStores.swift" \
@@ -17,6 +18,7 @@ xcrun swiftc -parse-as-library -Onone -g -D BATTERY_HOG_TESTING \
 
 xcrun swiftc -parse-as-library -Onone -g \
     -target "$TARGET" \
+    "$ROOT/src/Localization.swift" \
     "$ROOT/src/SystemSupport.swift" \
     "$ROOT/src/AgentGateStore.swift" \
     "$ROOT/src/BatteryHogGate.swift" \
