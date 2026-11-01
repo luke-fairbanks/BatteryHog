@@ -1,0 +1,22 @@
+name: Build and test
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Select the runner architecture
+        run: echo "SWIFT_TARGET=$(uname -m)-apple-macosx11.0" >> "$GITHUB_ENV"
+      - run: npm ci --ignore-scripts
+      - run: python3 scripts/build_localizations.py --check
+      - run: npm test
+      - run: python3 -m unittest discover -s tests -p 'test_*.py'
+      - run: bash tests/run_localization_tests.sh
+      - run: bash tests/run_native_tests.sh
+      - run: SKIP_DMG=1 BUNDLE_ID=com.lukefairbanks.batteryhog.preview bash src/package.sh

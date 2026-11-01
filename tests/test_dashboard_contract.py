@@ -369,8 +369,8 @@ class DashboardContractTests(unittest.TestCase):
         self.assertNotIn("charge horizon", self.html.lower())
         self.assertRegex(
             self.html,
-            r'class="current-energy-rail"\s*>\s*<span>Empty</span>'
-            r'\s*<span>Battery level</span>\s*<span>Full</span>',
+            r'class="current-energy-rail"\s*>\s*<span><span data-i18n="Empty">Empty</span></span>'
+            r'\s*<span><span data-i18n="Battery level">Battery level</span></span>\s*<span><span data-i18n="Full">Full</span></span>',
         )
         self.assertRegex(
             self.html,

@@ -2,6 +2,7 @@
 # Shared Swift compilation contract for every Battery Hog bundle path.
 
 BATTERY_HOG_APP_SOURCES=(
+    "$ROOT/src/Localization.swift"
     "$ROOT/src/SystemSupport.swift"
     "$ROOT/src/AgentGateStore.swift"
     "$ROOT/src/BatteryHogStores.swift"
